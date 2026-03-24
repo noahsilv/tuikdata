@@ -57,11 +57,11 @@ geo_data <- function(variable_no = NULL,
                      variable_source = NULL,
                      variable_period = NULL,
                      variable_recnum = NULL) {
-  data_params <- c(variable_no, variable_level, variable_source, variable_period, variable_recnum)
-  data_mode <- !all(sapply(data_params, is.null))
+  data_params <- list(variable_no, variable_level, variable_source, variable_period, variable_recnum)
+  data_mode <- !all(vapply(data_params, is.null, logical(1)))
 
   if (data_mode) {
-    if (any(sapply(data_params, is.null))) {
+    if (any(vapply(data_params, is.null, logical(1)))) {
       stop("All parameters (variable_no, variable_level, variable_source, variable_period, variable_recnum) must be provided together for data download.")
     }
     if (!(variable_level %in% c(2, 3, 4))) {
