@@ -13,6 +13,47 @@ This file provides guidance to Claude Code when working on the tuikr package.
 
 **Key dependencies:** tidyverse ecosystem (dplyr, purrr, tidyr), web scraping (rvest, xml2, crul), spatial (sf)
 
+## Architecture and Commands
+
+### Data access pattern
+The package uses two data portals:
+1. **Main TUIK portal** (`data.tuik.gov.tr`) for statistical themes, tables, and databases
+2. **Geographic portal** (`cip.tuik.gov.tr`) for spatial data and maps
+
+### Core function groups
+- `statistical_themes()`, `statistical_tables(theme)`, `statistical_databases(theme)` handle the main portal
+- `geo_data()` and `geo_map(level)` handle the geographic API
+- `check_theme_id(theme)` validates theme input
+- `make_request(url)` wraps HTTP POST requests through `crul`
+
+### Development commands
+```r
+devtools::load_all()
+devtools::document()
+devtools::test()
+devtools::check()
+devtools::install()
+pkgdown::build_site()
+```
+
+```bash
+R CMD build .
+R CMD check tuikr_*.tar.gz
+```
+
+### CI/CD
+- `R-CMD-check` runs multi-platform package checks
+- `test-coverage` reports coverage
+- `pkgdown` deploys the website to `gh-pages`
+- Dependabot updates GitHub Actions dependencies
+
+### Important quirks
+- `statistical_tables()` uses Turkish locale handling for date parsing
+- Geographic data is fetched from `https://cip.tuik.gov.tr/Home/GetMapData`
+- Map geometry is fetched from `https://cip.tuik.gov.tr/assets/geometri/{nuts2|nuts3|nuts4|yerlesim_noktalari}.json`
+- The package uses the `eerdown` pkgdown theme via `_pkgdown.yml`
+- Tests that hit the network should use `skip_on_cran()` and `skip_if_offline()`
+
 ## Mandatory Code Standards (r/anti-slop)
 
 ### Namespacing - Always Explicit

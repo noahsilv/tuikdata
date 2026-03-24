@@ -5,12 +5,9 @@
 
 <!-- badges: start -->
 
-[<span class="image placeholder"
-original-image-src="https://zenodo.org/badge/DOI/10.5281/zenodo.18381733.svg"
-original-image-title="">DOI</span>](https://doi.org/10.5281/zenodo.18381733)
-[![Lifecycle:
-stable](README_files/figure-gfm/4c3e7750a6a29618a9285cbb1cb165c8afe9987f.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![R-CMD-check](README_files/figure-gfm/b3976c6f4514e05c072654df427b2fac2113286a.svg)](https://github.com/emraher/cbRt/actions/workflows/R-CMD-check.yaml)
+[![DOI](https://zenodo.org/badge/313863336.svg)](https://zenodo.org/badge/latestdoi/313863336)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 R package for accessing Turkish Statistical Institute (TUIK) data from

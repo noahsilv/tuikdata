@@ -1,6 +1,10 @@
+.Ruserdata
 .Rproj.user
 .Rhistory
 .RData
+.DS_Store
+**/.DS_Store
 docs
 inst/doc
 README_cache
+.worktrees/
