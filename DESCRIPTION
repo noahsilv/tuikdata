@@ -1,11 +1,10 @@
 Package: tuikr
-Title: Download Data File And Database Urls from TUIK
+Title: Download Data Files and Database URLs from TUIK
 Version: 0.1.0
 Authors@R:
     person("Emrah", "Er", email = "eer@eremrah.com", role = c("aut", "cre"))
-Description: Download Data File And Database Urls from TUIK (Turkish Statistical Institute).
-    Provides functions to extract statistical tables, databases, and geographic data
-    from the TUIK web portal and geographic statistics portal.
+Description: Accesses Turkish Statistical Institute (TUIK) statistical tables,
+    database links, and geographic data through the public TUIK web portals.
 License: MIT + file LICENSE
 URL: https://github.com/emraher/tuikr, https://eremrah.com/tuikr/
 BugReports: https://github.com/emraher/tuikr/issues
