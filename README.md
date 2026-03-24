@@ -7,7 +7,7 @@
 
 [![DOI](https://zenodo.org/badge/313863336.svg)](https://zenodo.org/badge/latestdoi/313863336)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr)
 <!-- badges: end -->
 
 R package for accessing Turkish Statistical Institute (TUIK) data from
@@ -132,10 +132,10 @@ head(nuts3_map, 3)
 - **Level 4**: LAU-1 / District level (973 districts)
 - **Level 9**: Settlement points (returns POINT geometries)
 
-## Documentation
+## Vignettes
 
 - [Getting
-  Started](https://eremrah.com/tuikr/articles/getting-started.html)
+  Started](https://github.com/emraher/tuikr/blob/master/vignettes/getting-started.Rmd)
 - [Geographic Mapping
-  Examples](https://eremrah.com/tuikr/articles/geographic-mapping.html)
-- [Known Issues](https://eremrah.com/tuikr/articles/known-issues.html)
+  Examples](https://github.com/emraher/tuikr/blob/master/vignettes/geographic-mapping.Rmd)
+- [Known Issues](https://github.com/emraher/tuikr/blob/master/vignettes/known-issues.Rmd)

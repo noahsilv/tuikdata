@@ -1,9 +1,13 @@
+^\.git$
 ^\.github$
 ^\.claude$
 ^README\.Rmd$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+^data-raw$
+^data-raw/\.gitkeep$
+^inst/extdata/\.gitkeep$
 ^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$

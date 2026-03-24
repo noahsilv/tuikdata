@@ -1,5 +1,7 @@
 # tuikr 0.1.0
 
+* Tightened CRAN-facing package metadata and replaced placeholder submission notes with explicit preflight guidance.
+
 ## Major Improvements
 
 ### New Vignettes

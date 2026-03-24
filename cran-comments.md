@@ -1,6 +1,6 @@
 ## Test environments
 
-- Local: R version X.Y.Z (platform details)
+- Local: R version 4.4.3 (2025-02-28) on macOS Sequoia 15.7.4, x86_64-apple-darwin20
 
 - GitHub Actions: Windows, macOS, and Ubuntu (release and devel where configured)
 
@@ -8,7 +8,7 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 2 notes
 
 ## Reverse dependencies
 
@@ -16,6 +16,6 @@ This is a new submission.
 
 ## Remarks
 
-- Please replace the placeholders in DESCRIPTION (authors, URLs, BugReports).
-
-- Ensure the package title and description comply with CRAN policies.
+- `R CMD check --as-cran tuikr_0.1.0.tar.gz` completed with 0 errors and 0 warnings.
+- The first NOTE is the standard new-submission note reported by CRAN incoming feasibility checks.
+- The second NOTE is `unable to verify current time`, observed in the local macOS check environment.

@@ -8,10 +8,12 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = !pkgdown::in_pkgdown()
+  eval = build_examples
 )
 ```
 
