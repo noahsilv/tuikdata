@@ -1,12 +1,17 @@
+^\.git$
 ^\.github$
 ^\.claude$
 ^README\.Rmd$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+^data-raw$
+^data-raw/\.gitkeep$
+^inst/extdata/\.gitkeep$
 ^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^setup\.R$
 ^codecov\.yml$
 ^CODE_OF_CONDUCT\.md$
 ^LICENSE\.md$

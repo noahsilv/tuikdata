@@ -1,5 +1,8 @@
 test_that("statistical_themes returns a tibble", {
-  skip_on_cran()
+  skip_if_not(
+    identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
+    "Set RUN_NETWORK_TESTS=true to run network integration tests."
+  )
   skip_if_offline()
   
   themes <- statistical_themes()
