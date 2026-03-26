@@ -2,28 +2,29 @@
 % Please edit documentation in R/statistical-themes.R
 \name{statistical_themes}
 \alias{statistical_themes}
-\title{Get Statistical Themes and URLs from TUIK}
+\title{Get Statistical Themes from TUIK}
 \usage{
-statistical_themes()
+statistical_themes(lang = "tr")
+}
+\arguments{
+\item{lang}{Character string. Portal language code. Default \code{"tr"} for
+Turkish. Use \code{"en"} for English.}
 }
 \value{
 A tibble with 2 columns:
 \describe{
-\item{theme_name}{Character. Turkish name of the statistical theme}
-\item{theme_id}{Character. Numeric ID used to query tables and databases}
+\item{theme_name}{Character. Name of the statistical theme.}
+\item{theme_id}{Character. Numeric ID used to query tables and databases.}
 }
 }
 \description{
-Retrieves all available statistical themes from the TUIK data portal.
+Retrieves all top-level statistical themes from the TUIK data portal.
 Theme IDs are used with \code{\link{statistical_tables}} and
 \code{\link{statistical_databases}} to access specific data.
 }
 \examples{
 \dontrun{
-# Get all available themes
 themes <- statistical_themes()
-
-# View theme names and IDs
 print(themes)
 }
 

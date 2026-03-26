@@ -4,41 +4,57 @@
 \alias{statistical_tables}
 \title{Get Statistical Tables for a Theme from TUIK}
 \usage{
-statistical_tables(theme)
+statistical_tables(theme, lang = "tr")
 }
 \arguments{
-\item{theme}{Character or numeric. A single theme ID (e.g., "102" or 102).
-Only one theme can be queried at a time. Invalid or multiple theme IDs
-will return an error with a list of valid themes.}
+\item{theme}{Character or numeric. A single theme ID (e.g., \code{"11"} or
+\code{11}). Only one theme can be queried at a time. Invalid or multiple
+theme IDs return an error with a list of valid themes.}
+
+\item{lang}{Character string. Portal language code. Default \code{"tr"} for
+Turkish. Use \code{"en"} for English.}
 }
 \value{
-A tibble with 5 columns:
+A tibble with 6 columns:
 \describe{
-\item{theme_name}{Character. Turkish name of the statistical theme}
-\item{theme_id}{Character. Numeric ID of the theme}
-\item{data_name}{Character. Name/description of the statistical table}
-\item{data_date}{Date. Publication or update date of the table}
-\item{datafile_url}{Character. Direct download URL for the table file (usually Excel)}
+\item{theme_name}{Character. Name of the statistical theme.}
+\item{theme_id}{Character. Numeric ID of the theme.}
+\item{table_name}{Character. Name of the table or dataset.}
+\item{node_type}{Character. \code{"dataflow"} for SDMX interactive
+datasets; \code{"istab"} for direct file downloads.}
+\item{dataflow_id}{Character. SDMX dataflow identifier
+(e.g., \code{"TR,DF_ADNKS_T18,1.1"}). \code{NA} for \code{istab} nodes.}
+\item{table_url}{Character. For \code{dataflow} nodes: URL to the
+interactive data browser. For \code{istab} nodes: direct download URL.}
 }
 }
 \description{
-Retrieves all statistical tables available for a specific theme from the
-TUIK data portal. Theme IDs can be obtained using \code{\link{statistical_themes}}.
+Retrieves statistical tables and SDMX dataflows for a specific theme from
+the TUIK data portal. Theme IDs can be obtained using
+\code{\link{statistical_themes}}.
 }
 \note{
-TUIK Excel files often have irregular formatting (multiple headers,
-mixed languages, source notes). Manual cleaning may be required after download.
+The TUIK portal distinguishes between SDMX dataflows (interactive
+query interface via \url{https://databrowser2.tuik.gov.tr}) and static
+file downloads (\code{istab}). Use \code{dataflow_id} with the
+\code{databrowser2.tuik.gov.tr} API for programmatic SDMX data access.
 }
 \examples{
 \dontrun{
 # Get all themes first
 themes <- statistical_themes()
 
-# Get tables for a specific theme
-tables <- statistical_tables(102)
+# Get tables for Population and Demography (theme 11)
+tables <- statistical_tables(11)
 
-# Download a specific table
-download.file(tables$datafile_url[1], destfile = "data.xls")
+# Filter to SDMX dataflows only
+dataflows <- dplyr::filter(tables, node_type == "dataflow")
+
+# Use dataflow_id with the SDMX API
+sdmx_url <- paste0(
+  "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
+  dataflows$dataflow_id[1], "/data"
+)
 }
 
 }

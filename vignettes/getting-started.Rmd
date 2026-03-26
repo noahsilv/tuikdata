@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 `tuikr` provides access to Turkish Statistical Institute (TUIK) data from two portals:
 
-1. **Main portal** ([data.tuik.gov.tr](https://data.tuik.gov.tr/)): Statistical themes, tables, and databases
+1. **Main portal** ([veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)): Statistical themes, tables, and databases via a JSON API and SDMX dataflows
 2. **Geographic portal** ([cip.tuik.gov.tr](https://cip.tuik.gov.tr/)): Spatial data and maps
 
 ## Installation
@@ -44,7 +44,7 @@ library(tidyverse)
 
 ### Step 1: Discover Themes
 
-TUIK organizes data into 17 thematic categories. Start by listing all available themes:
+TUIK organizes data into thematic categories. Start by listing all available themes:
 
 ```{r themes}
 (themes <- statistical_themes())
@@ -54,54 +54,78 @@ Returns a tibble with theme names (Turkish) and IDs.
 
 ### Step 2: Find Tables
 
-Retrieve data tables for a theme:
+Retrieve data tables and SDMX dataflows for a theme:
 
 ```{r tables}
-# Get tables for Justice and Elections theme
-justice_tables <- statistical_tables("110")
+# Get tables for Justice and Elections (theme 1)
+justice_tables <- statistical_tables("1")
 
 # View the first few tables
 head(justice_tables)
 ```
+
+Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive datasets,
+`"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id` for
+programmatic access via the `databrowser2.tuik.gov.tr` API.
 
 The function validates input:
 
 ```{r validate, error=TRUE, eval=FALSE}
 # Invalid theme ID
 statistical_tables("aaa")
-#> Error in check_theme_id(theme) : You should select a valid theme ID!
+#> Error: You should select a valid theme ID!
 ```
 
 ```{r validate2, error=TRUE, eval=FALSE}
 # Multiple themes not allowed
-statistical_tables(c("110", "108"))
-#> Error in check_theme_id(theme) : You can select only one theme!
+statistical_tables(c("1", "2"))
+#> Error: You can select only one theme!
 ```
 
 ### Step 3: Get Database URLs
 
-Retrieve database URLs:
+Retrieve legacy interactive database URLs:
 
 ```{r databases}
-justice_dbs <- statistical_databases("110")
+justice_dbs <- statistical_databases("1")
 ```
 
 
-## Downloading Data Files
+## Accessing Data
 
-Download Excel files using the URLs:
+### SDMX Dataflows
+
+Access data programmatically via the SDMX API:
+
+```{r sdmx}
+# Filter to SDMX dataflows
+dataflows <- dplyr::filter(justice_tables, node_type == "dataflow")
+
+# Build SDMX data endpoint
+sdmx_url <- paste0(
+  "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
+  dataflows$dataflow_id[1], "/data"
+)
+```
+
+### File Downloads
+
+Download Excel files directly (`istab` nodes):
 
 ```{r download}
+# Filter to file downloads
+file_tables <- dplyr::filter(justice_tables, node_type == "istab")
+
 # Download a specific file
 download.file(
-  justice_tables$datafile_url[1],
+  file_tables$table_url[1],
   destfile = "/tmp/tuik_data.xls",
   mode = "wb"
 )
 
 # Read into R
 library(readxl)
-data <- read_xls("/tmp/tuik_data.xls")
+table_data <- read_xls("/tmp/tuik_data.xls")
 ```
 
 TUIK Excel files often need cleaning: multiple headers, footer notes, mixed languages. Use `skip`, `n_max`, and `janitor::clean_names()`.

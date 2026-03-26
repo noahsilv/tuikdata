@@ -1,37 +1,29 @@
-#' Get Statistical Themes and URLs from TUIK
+#' Get Statistical Themes from TUIK
 #'
-#' Retrieves all available statistical themes from the TUIK data portal.
+#' Retrieves all top-level statistical themes from the TUIK data portal.
 #' Theme IDs are used with \code{\link{statistical_tables}} and
 #' \code{\link{statistical_databases}} to access specific data.
 #'
+#' @param lang Character string. Portal language code. Default \code{"tr"} for
+#'   Turkish. Use \code{"en"} for English.
+#'
 #' @return A tibble with 2 columns:
 #' \describe{
-#'   \item{theme_name}{Character. Turkish name of the statistical theme}
-#'   \item{theme_id}{Character. Numeric ID used to query tables and databases}
+#'   \item{theme_name}{Character. Name of the statistical theme.}
+#'   \item{theme_id}{Character. Numeric ID used to query tables and databases.}
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # Get all available themes
 #' themes <- statistical_themes()
-#'
-#' # View theme names and IDs
 #' print(themes)
 #' }
 #'
 #' @export
-statistical_themes <- function() {
-  doc <- xml2::read_html("https://data.tuik.gov.tr/") |>
-    rvest::html_nodes("div.text-center") |>
-    rvest::html_nodes("a")
-
-  tibble::tibble(
-    theme_name = doc |>
-      rvest::html_text() |>
-      stringr::str_trim(),
-    theme_id = doc |>
-      rvest::html_attr("href") |>
-      stringr::str_extract_all("[:digit:]+") |>
-      unlist()
-  )
+statistical_themes <- function(lang = "tr") {
+  theme_list <- fetch_theme_tree(lang)
+  return(tibble::tibble(
+    theme_name = purrr::map_chr(theme_list, "name"),
+    theme_id   = purrr::map_chr(theme_list, ~ as.character(.x[["id"]]))
+  ))
 }

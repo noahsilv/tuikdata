@@ -16,8 +16,12 @@
 ^CODE_OF_CONDUCT\.md$
 ^LICENSE\.md$
 ^README_cache$
+^\.worktrees$
+^\.worktrees/
 ^\.lintr$
 ^CLAUDE\.md$
 ^CITATION\.cff$
 ^CONTRIBUTING\.md$
 ^README_files$
+^presentation$
+^presentation/

@@ -13,8 +13,9 @@
 R package for accessing Turkish Statistical Institute (TUIK) data from
 two portals:
 
-- **Statistical data**: Themes, tables, and databases from
-  [data.tuik.gov.tr](https://data.tuik.gov.tr/)
+- **Statistical data**: Themes, file downloads, SDMX dataflows, and
+  legacy databases from
+  [veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)
 - **Geographic data**: Maps and spatial statistics from
   [cip.tuik.gov.tr](https://cip.tuik.gov.tr/)
 
@@ -35,36 +36,23 @@ library(tuikr)
 # List all themes
 themes <- statistical_themes()
 head(themes)
-#> # A tibble: 6 × 2
-#>   theme_name                        theme_id
-#>   <chr>                             <chr>   
-#> 1 Adalet ve Seçim                   110     
-#> 2 Bilim, Teknoloji ve Bilgi Toplumu 102     
-#> 3 Çevre ve Enerji                   103     
-#> 4 Dış Ticaret                       104     
-#> 5 Eğitim, Kültür, Spor ve Turizm    105     
-#> 6 Ekonomik Güven                    117
 
-# Get tables for a theme
-tables <- statistical_tables(110)
+# Get statistical tables and SDMX dataflows for a theme
+tables <- statistical_tables(1)
 head(tables, 3)
-#> # A tibble: 3 × 5
-#>   theme_name      theme_id data_name                     data_date  datafile_url
-#>   <chr>           <chr>    <chr>                         <date>     <chr>       
-#> 1 Adalet ve Seçim 110      Yurt içi, yurt dışı ve gümrü… 2024-07-03 http://data…
-#> 2 Adalet ve Seçim 110      İBBS, 1. Düzeyde, Suç Türü v… 2021-11-02 http://data…
-#> 3 Adalet ve Seçim 110      İBBS, 3. Düzeyde, Suç Türü v… 2021-11-02 http://data…
 
-# Get databases for a theme
-databases <- statistical_databases(110)
+# Filter direct file downloads
+file_tables <- tables[tables$node_type == "istab", ]
+head(file_tables$table_url, 3)
+
+# Get legacy database URLs for the same theme
+databases <- statistical_databases(1)
 head(databases, 3)
-#> # A tibble: 3 × 4
-#>   theme_name      theme_id db_name                                        db_url
-#>   <chr>           <chr>    <chr>                                          <chr> 
-#> 1 Adalet ve Seçim 110      "Milletvekili Seçim Sonuçları "                http:…
-#> 2 Adalet ve Seçim 110      "Mahalli İdareler Seçim Sonuçları "            http:…
-#> 3 Adalet ve Seçim 110      "Cumhurbaşkanlığı Seçimi / Halk Oylaması Sonu… http:…
 ```
+
+`statistical_tables()` returns a `node_type` column. Use `"dataflow"`
+rows for SDMX-backed datasets and `"istab"` rows for direct file
+downloads exposed in `table_url`.
 
 ### Geographic Data
 

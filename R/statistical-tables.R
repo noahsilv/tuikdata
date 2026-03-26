@@ -1,87 +1,55 @@
 #' Get Statistical Tables for a Theme from TUIK
 #'
-#' Retrieves all statistical tables available for a specific theme from the
-#' TUIK data portal. Theme IDs can be obtained using \code{\link{statistical_themes}}.
+#' Retrieves statistical tables and SDMX dataflows for a specific theme from
+#' the TUIK data portal. Theme IDs can be obtained using
+#' \code{\link{statistical_themes}}.
 #'
-#' @param theme Character or numeric. A single theme ID (e.g., "102" or 102).
-#'   Only one theme can be queried at a time. Invalid or multiple theme IDs
-#'   will return an error with a list of valid themes.
+#' @param theme Character or numeric. A single theme ID (e.g., \code{"11"} or
+#'   \code{11}). Only one theme can be queried at a time. Invalid or multiple
+#'   theme IDs return an error with a list of valid themes.
+#' @param lang Character string. Portal language code. Default \code{"tr"} for
+#'   Turkish. Use \code{"en"} for English.
 #'
-#' @return A tibble with 5 columns:
+#' @return A tibble with 6 columns:
 #' \describe{
-#'   \item{theme_name}{Character. Turkish name of the statistical theme}
-#'   \item{theme_id}{Character. Numeric ID of the theme}
-#'   \item{data_name}{Character. Name/description of the statistical table}
-#'   \item{data_date}{Date. Publication or update date of the table}
-#'   \item{datafile_url}{Character. Direct download URL for the table file (usually Excel)}
+#'   \item{theme_name}{Character. Name of the statistical theme.}
+#'   \item{theme_id}{Character. Numeric ID of the theme.}
+#'   \item{table_name}{Character. Name of the table or dataset.}
+#'   \item{node_type}{Character. \code{"dataflow"} for SDMX interactive
+#'     datasets; \code{"istab"} for direct file downloads.}
+#'   \item{dataflow_id}{Character. SDMX dataflow identifier
+#'     (e.g., \code{"TR,DF_ADNKS_T18,1.1"}). \code{NA} for \code{istab} nodes.}
+#'   \item{table_url}{Character. For \code{dataflow} nodes: URL to the
+#'     interactive data browser. For \code{istab} nodes: direct download URL.}
 #' }
 #'
-#' @note TUIK Excel files often have irregular formatting (multiple headers,
-#'   mixed languages, source notes). Manual cleaning may be required after download.
+#' @note The TUIK portal distinguishes between SDMX dataflows (interactive
+#'   query interface via \url{https://databrowser2.tuik.gov.tr}) and static
+#'   file downloads (\code{istab}). Use \code{dataflow_id} with the
+#'   \code{databrowser2.tuik.gov.tr} API for programmatic SDMX data access.
 #'
 #' @examples
 #' \dontrun{
 #' # Get all themes first
 #' themes <- statistical_themes()
 #'
-#' # Get tables for a specific theme
-#' tables <- statistical_tables(102)
+#' # Get tables for Population and Demography (theme 11)
+#' tables <- statistical_tables(11)
 #'
-#' # Download a specific table
-#' download.file(tables$datafile_url[1], destfile = "data.xls")
+#' # Filter to SDMX dataflows only
+#' dataflows <- dplyr::filter(tables, node_type == "dataflow")
+#'
+#' # Use dataflow_id with the SDMX API
+#' sdmx_url <- paste0(
+#'   "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
+#'   dataflows$dataflow_id[1], "/data"
+#' )
 #' }
 #'
 #' @export
-statistical_tables <- function(theme) {
-  sthemes <- check_theme_id(theme)
-
-  request_url <- paste0(
-    "https://data.tuik.gov.tr/Kategori/GetIstatistikselTablolar?UstId=",
-    theme,
-    "&DilId=1&Page=1&Count=10000&Arsiv=true"
-  )
-
-  resp <- make_request(request_url)
-  doc <- xml2::read_html(resp)
-
-  table_data <- doc |>
-    rvest::html_table() |>
-    purrr::pluck(1) |>
-    dplyr::select(1:2) |>
-    dplyr::filter(.data$X2 != "") |>
-    dplyr::mutate(
-      X1 = stringr::str_remove_all(
-        .data$X1,
-        "\\u0130statistiksel Tablolar(Yeni)?(\r?\n[ ]+)?"
-      )
-    ) |>
-    purrr::set_names("data_name", "data_date")
-
-  table_links <- doc |>
-    rvest::html_nodes("a")
-
-  table_urls <- tibble::tibble(
-    url = rvest::html_attr(table_links, "href"),
-    title = rvest::html_attr(table_links, "title")
-  ) |>
-    dplyr::filter(.data$title != "Tablo Metaverisi") |>
-    dplyr::mutate(url = paste0("http://data.tuik.gov.tr", .data$url)) |>
-    dplyr::pull(.data$url)
-
-  theme_info <- sthemes |>
-    dplyr::filter(.data$theme_id %in% theme)
-
-  mylocale <- if (Sys.info()["sysname"] == "Windows") {
-    "Turkish_Turkey.utf8"
-  } else {
-    "tr_TR"
-  }
-
-  tibble::tibble(
-    theme_name = theme_info$theme_name,
-    theme_id = theme_info$theme_id,
-    data_name = table_data$data_name,
-    data_date = lubridate::dmy(table_data$data_date, locale = mylocale),
-    datafile_url = table_urls
-  )
+statistical_tables <- function(theme, lang = "tr") {
+  theme_tree <- fetch_theme_tree(lang)
+  theme_node <- validate_theme(theme, theme_tree)
+  table_rows <- build_statistical_table_tibble(theme_node)
+  return(table_rows)
 }

@@ -19,20 +19,21 @@ knitr::opts_chunk$set(
 
 Known issues and workarounds for `tuikr`.
 
-## TUIK Website Structure Changes
+## TUIK Portal Changes
 
 ### The Challenge
 
-Web scraping breaks when TUIK updates website structure.
+TUIK migrated from `data.tuik.gov.tr` (HTML scraping) to `veriportali.tuik.gov.tr` (JSON API + SDMX). The package now uses the JSON API, which is more stable but still subject to breaking changes if TUIK modifies the API response structure.
+
 ```{r website_change}
-# This may fail if TUIK has restructured their database pages
-databases <- statistical_databases("110")
-#> Error: Could not parse database information
+# If the API structure changes, functions will error
+databases <- statistical_databases("1")
+#> Error: Could not parse theme data
 ```
 
 ### Workarounds
 
-Check for updates, report issues on [GitHub](https://github.com/emraher/tuikr/issues), or use geographic functions (more stable JSON API).
+Check for package updates, report issues on [GitHub](https://github.com/emraher/tuikr/issues), or use geographic functions (separate stable JSON API).
 
 ## Messy Excel Files
 
@@ -46,9 +47,10 @@ TUIK Excel files have inconsistent formatting: multiple headers, mixed languages
 library(readxl)
 library(tuikr)
 
-# Download a file
-tables <- statistical_tables("110")
-download.file(tables$datafile_url[1], destfile = "/tmp/data.xls", mode = "wb")
+# Download a file (istab nodes only)
+tables <- statistical_tables("1")
+file_tables <- dplyr::filter(tables, node_type == "istab")
+download.file(file_tables$table_url[1], destfile = "/tmp/data.xls", mode = "wb")
 
 # Read without cleaning
 raw_data <- read_xls("/tmp/data.xls")
@@ -144,8 +146,8 @@ if (is.null(themes)) {
 
 ```{r rate_limit}
 # Add delays between requests
-theme_ids <- c("110", "108", "109")
-all_tables <- map_df(theme_ids, function(id) {
+theme_ids <- c("1", "2", "3")
+all_tables <- purrr::map_df(theme_ids, function(id) {
   Sys.sleep(1)  # Wait 1 second between requests
   statistical_tables(id)
 })
@@ -198,24 +200,6 @@ download_if_available <- function(var_no, level, ...) {
 
 
 ## Locale and Date Parsing
-
-### Turkish Date Formats
-
-```{r locale}
-statistical_tables("110")
-```
-
-Check system locale if encountering date parsing errors:
-
-```{r check_locale}
-Sys.getlocale("LC_TIME")
-
-# Set Turkish locale (Unix/macOS)
-Sys.setlocale("LC_TIME", "tr_TR")
-
-# Set Turkish locale (Windows)
-Sys.setlocale("LC_TIME", "Turkish_Turkey.utf8")
-```
 
 ### Geographic Data Dates
 
