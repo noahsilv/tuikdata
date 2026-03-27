@@ -19,22 +19,6 @@ theme_tree_fixture <- list(
   )
 )
 
-as.data.frame.sdmx_mock <- function(x, ...) {
-  return(data.frame(
-    REF_AREA = x$REF_AREA,
-    obsTime = x$obsTime,
-    obsValue = x$obsValue,
-    stringsAsFactors = FALSE
-  ))
-}
-
-base::registerS3method(
-  "as.data.frame",
-  "sdmx_mock",
-  as.data.frame.sdmx_mock,
-  envir = baseenv()
-)
-
 test_that("validate_dataflow_id rejects malformed values", {
   expect_error(
     tuikr:::validate_dataflow_id(1),
@@ -80,15 +64,15 @@ test_that("build_sdmx_data_url returns the TUIK data endpoint", {
   expect_true(grepl("dimensionAtObservation=TIME_PERIOD", data_url, fixed = TRUE))
 })
 
-test_that("normalize_sdmx_data trims character columns", {
-  sdmx_mock <- list(
+test_that("normalize_sdmx_data trims character columns from tabular inputs", {
+  tabular_input <- data.frame(
     REF_AREA = c(" TR ", " TR "),
     obsTime = c(" 2016 ", " 2017 "),
-    obsValue = c(" 174.4 ", " 170.1 ")
+    obsValue = c(" 174.4 ", " 170.1 "),
+    stringsAsFactors = FALSE
   )
-  class(sdmx_mock) <- "sdmx_mock"
 
-  normalized_data <- tuikr:::normalize_sdmx_data(sdmx_mock)
+  normalized_data <- tuikr:::normalize_sdmx_data(tabular_input)
 
   expect_s3_class(normalized_data, "tbl_df")
   expect_equal(normalized_data$REF_AREA, c("TR", "TR"))
