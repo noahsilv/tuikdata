@@ -54,6 +54,14 @@ head(sdmx_tables, 3)
 sdmx_data <- statistical_data(sdmx_tables$dataflow_id[1])
 head(sdmx_data, 3)
 
+# Request the browser's default table layout for a known dataflow
+birth_table <- statistical_data(
+  "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
+  layout = "table",
+  lang = "en"
+)
+head(birth_table, 3)
+
 # Get legacy database URLs for the same theme
 databases <- statistical_databases(1)
 head(databases, 3)
@@ -78,7 +86,8 @@ downloads exposed in `table_url`.
 `dataflow_id` is the canonical machine identifier for SDMX-backed
 datasets. Use `statistical_data()` to download observations. Some
 datasets work with the default `key = "ALL"`, while others need a more
-specific SDMX key.
+specific SDMX key. When you want the TUIK browser’s default pivoted
+table instead of long-form observations, use `layout = "table"`.
 
 ### Geographic Data
 

@@ -120,10 +120,19 @@ dataflows <- dplyr::filter(justice_tables, node_type == "dataflow")
 justice_data <- statistical_data(
   dataflow_id = dataflows$dataflow_id[1]
 )
+
+# Return the browser's default table layout instead of long observations
+birth_table <- statistical_data(
+  dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
+  layout = "table",
+  lang = "en"
+)
 ```
 
 `statistical_data()` uses the same `dataflow_id` and defaults to
-`key = "ALL"`, but some datasets require a more specific SDMX key.
+`key = "ALL"`, but some datasets require a more specific SDMX key. Use
+`layout = "table"` when you want the browser's default pivoted table rather
+than the long SDMX observation format.
 
 ### File Downloads
 

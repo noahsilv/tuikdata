@@ -10,7 +10,9 @@ statistical_data(
   start = NULL,
   end = NULL,
   detail = "full",
-  dimension_at_observation = "TIME_PERIOD"
+  dimension_at_observation = "TIME_PERIOD",
+  layout = "long",
+  lang = "tr"
 )
 }
 \arguments{
@@ -27,9 +29,19 @@ statistical_data(
 
 \item{dimension_at_observation}{Character string. Default
 \code{"TIME_PERIOD"}.}
+
+\item{layout}{Character string. Default \code{"long"} returns the flat SDMX
+observations. Use \code{"table"} to pivot the result using the default
+row and column layout from the TUIK data browser.}
+
+\item{lang}{Character string. Language for browser-derived table labels.
+Default \code{"tr"}. Use \code{"en"} for English labels in
+\code{layout = "table"} mode.}
 }
 \value{
-A tibble with SDMX observations and character columns trimmed.
+A tibble. By default, returns long-form SDMX observations with
+trimmed character columns. In \code{layout = "table"} mode, returns a
+wide table using the browser's default layout.
 }
 \description{
 Downloads a TUIK SDMX dataset identified by \code{dataflow_id} and returns a
@@ -40,6 +52,12 @@ cleaned tibble for analysis.
 statistical_data(
   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
   key = "TR....../ALL"
+)
+
+statistical_data(
+  dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
+  layout = "table",
+  lang = "en"
 )
 }
 

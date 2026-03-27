@@ -29,6 +29,25 @@ test_that("statistical_data downloads a TUIK SDMX dataset", {
   expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(uhti_data)))
 })
 
+test_that("statistical_data can return the browser's default table layout", {
+  skip_if_not(
+    identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
+    "Set RUN_NETWORK_TESTS=true to run network integration tests."
+  )
+  skip_if_offline()
+
+  birth_table <- statistical_data(
+    dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
+    layout = "table",
+    lang = "en"
+  )
+
+  expect_s3_class(birth_table, "tbl_df")
+  expect_true("TIME_PERIOD" %in% names(birth_table))
+  expect_true(any(grepl("Turkey \\| 15-19", names(birth_table))))
+  expect_true(nrow(birth_table) > 0)
+})
+
 test_that("internal structure helper downloads TUIK SDMX metadata", {
   skip_if_not(
     identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
@@ -70,6 +89,14 @@ test_that("statistical_data validates SDMX arguments before URL construction", {
   expect_error(
     statistical_data("TR,DF_UHTI_COGRAFI,1.0", end = NA_character_),
     "end must be a single non-NA character string"
+  )
+  expect_error(
+    statistical_data("TR,DF_UHTI_COGRAFI,1.0", lang = "de"),
+    "lang must be one of 'tr' or 'en'"
+  )
+  expect_error(
+    statistical_data("TR,DF_UHTI_COGRAFI,1.0", layout = "matrix"),
+    "'arg' should be one of"
   )
 })
 

@@ -11,14 +11,28 @@
 #' @param detail Character string. Default \code{"full"}.
 #' @param dimension_at_observation Character string. Default
 #'   \code{"TIME_PERIOD"}.
+#' @param layout Character string. Default \code{"long"} returns the flat SDMX
+#'   observations. Use \code{"table"} to pivot the result using the default
+#'   row and column layout from the TUIK data browser.
+#' @param lang Character string. Language for browser-derived table labels.
+#'   Default \code{"tr"}. Use \code{"en"} for English labels in
+#'   \code{layout = "table"} mode.
 #'
-#' @return A tibble with SDMX observations and character columns trimmed.
+#' @return A tibble. By default, returns long-form SDMX observations with
+#'   trimmed character columns. In \code{layout = "table"} mode, returns a
+#'   wide table using the browser's default layout.
 #'
 #' @examples
 #' \dontrun{
 #' statistical_data(
 #'   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
 #'   key = "TR....../ALL"
+#' )
+#'
+#' statistical_data(
+#'   dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
+#'   layout = "table",
+#'   lang = "en"
 #' )
 #' }
 #'
@@ -28,13 +42,17 @@ statistical_data <- function(dataflow_id,
                              start = NULL,
                              end = NULL,
                              detail = "full",
-                             dimension_at_observation = "TIME_PERIOD") {
+                             dimension_at_observation = "TIME_PERIOD",
+                             layout = "long",
+                             lang = "tr") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   validate_statistical_sdmx_key(key)
   validate_statistical_sdmx_optional_text(start, "start")
   validate_statistical_sdmx_optional_text(end, "end")
   validate_statistical_sdmx_text(detail, "detail")
   validate_statistical_sdmx_text(dimension_at_observation, "dimension_at_observation")
+  validated_layout <- match.arg(layout, c("long", "table"))
+  validated_lang <- validate_statistical_lang(lang)
 
   data_url <- build_sdmx_data_url(
     dataflow_id = validated_dataflow_id,
@@ -47,6 +65,25 @@ statistical_data <- function(dataflow_id,
 
   sdmx_document <- read_sdmx_document(data_url)
   sdmx_data <- normalize_sdmx_data(sdmx_document)
+
+  if (validated_layout == "table") {
+    structure_payload <- fetch_databrowser_structure(
+      validated_dataflow_id,
+      lang = validated_lang
+    )
+    table_layout <- extract_databrowser_table_layout(structure_payload)
+    structure_info <- statistical_data_structure(validated_dataflow_id)
+    label_maps <- extract_sdmx_dimension_label_maps(
+      structure_info$raw_sdmx,
+      lang = validated_lang
+    )
+
+    return(build_statistical_data_table(
+      sdmx_data,
+      table_layout = table_layout,
+      label_maps = label_maps
+    ))
+  }
 
   return(sdmx_data)
 }
