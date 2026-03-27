@@ -4,6 +4,102 @@
 #' @name helpers
 NULL
 
+validate_dataflow_id <- function(dataflow_id) {
+  if (!is.character(dataflow_id) || length(dataflow_id) != 1 || is.na(dataflow_id)) {
+    stop("dataflow_id must be a single character string.", call. = FALSE)
+  }
+
+  dataflow_parts <- base::strsplit(dataflow_id, ",", fixed = TRUE)[[1]]
+  if (length(dataflow_parts) != 3 || any(base::nchar(dataflow_parts) == 0)) {
+    stop("dataflow_id must have three comma-separated parts.", call. = FALSE)
+  }
+
+  return(dataflow_id)
+}
+
+split_dataflow_id <- function(dataflow_id) {
+  validated_dataflow_id <- validate_dataflow_id(dataflow_id)
+  dataflow_parts <- base::strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
+
+  dataflow_components <- list(
+    agency_id = dataflow_parts[[1]],
+    flow_id = dataflow_parts[[2]],
+    version = dataflow_parts[[3]]
+  )
+
+  return(dataflow_components)
+}
+
+build_sdmx_structure_url <- function(dataflow_id,
+                                     detail = "Full",
+                                     references = "Descendants") {
+  dataflow_parts <- split_dataflow_id(dataflow_id)
+
+  structure_url <- paste0(
+    "https://nsiws.tuik.gov.tr/rest/dataflow/",
+    dataflow_parts$agency_id, "/",
+    dataflow_parts$flow_id, "/",
+    dataflow_parts$version,
+    "?detail=", detail,
+    "&references=", references
+  )
+
+  return(structure_url)
+}
+
+build_sdmx_data_url <- function(dataflow_id,
+                                key = "ALL",
+                                start = NULL,
+                                end = NULL,
+                                detail = "full",
+                                dimension_at_observation = "TIME_PERIOD") {
+  validated_dataflow_id <- validate_dataflow_id(dataflow_id)
+  query_parts <- c(
+    paste0("detail=", detail),
+    paste0("dimensionAtObservation=", dimension_at_observation)
+  )
+
+  if (!is.null(start)) {
+    query_parts <- c(query_parts, paste0("startPeriod=", start))
+  }
+  if (!is.null(end)) {
+    query_parts <- c(query_parts, paste0("endPeriod=", end))
+  }
+
+  data_url <- paste0(
+    "https://nsiws.tuik.gov.tr/rest/data/",
+    validated_dataflow_id, "/",
+    key,
+    "/?",
+    base::paste(query_parts, collapse = "&")
+  )
+
+  return(data_url)
+}
+
+read_sdmx_document <- function(file) {
+  sdmx_document <- rsdmx::readSDMX(
+    file = file,
+    isURL = TRUE,
+    validate = FALSE,
+    verbose = FALSE
+  )
+
+  return(sdmx_document)
+}
+
+normalize_sdmx_data <- function(sdmx_document) {
+  sdmx_data_frame <- base::as.data.frame(sdmx_document, stringsAsFactors = FALSE)
+  sdmx_tibble <- tibble::as_tibble(sdmx_data_frame)
+
+  normalized_tibble <- dplyr::mutate(
+    sdmx_tibble,
+    dplyr::across(dplyr::where(base::is.character), stringr::str_trim)
+  )
+
+  return(normalized_tibble)
+}
+
 build_statistical_portal_request <- function(lang = "tr") {
   if (!is.character(lang) || length(lang) != 1 || !(lang %in% c("tr", "en"))) {
     stop("lang must be one of 'tr' or 'en'.", call. = FALSE)
