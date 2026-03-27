@@ -61,9 +61,9 @@ head(databases, 3)
 SDMX-backed datasets and `"istab"` rows for direct file downloads exposed in
 `table_url`.
 
-The SDMX layer will be exposed through `statistical_data_structure()` for
-metadata and `statistical_data()` for downloads. Both functions will use
-`dataflow_id` values returned by `statistical_tables()`.
+The planned SDMX layer in this rewrite centers on `statistical_data_structure()`
+for metadata and `statistical_data()` for downloads. Both entry points will use
+`dataflow_id` values returned by `statistical_tables()` once they are added.
 
 ### Geographic Data
 

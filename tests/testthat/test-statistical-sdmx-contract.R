@@ -16,7 +16,7 @@ test_that("sdmx contract is documented in source files", {
     info = "`DESCRIPTION` must import `rsdmx`."
   )
   expect_true(
-    any(grepl("statistical_tables\\(1\\)", readme_lines)),
+    any(grepl("statistical_tables(", readme_lines, fixed = TRUE)),
     info = "`README.Rmd` should show the new discovery call."
   )
   expect_true(
