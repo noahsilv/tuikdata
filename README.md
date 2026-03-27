@@ -42,6 +42,10 @@ head(themes)
 tables <- statistical_tables(1)
 head(tables, 3)
 
+# Discover all portal resources for the same theme
+resources <- statistical_resources(1)
+head(resources, 3)
+
 # Filter SDMX-backed rows
 sdmx_tables <- tables[tables$node_type == "dataflow", ]
 head(sdmx_tables, 3)
@@ -57,10 +61,18 @@ head(sdmx_data, 3)
 databases <- statistical_databases(1)
 head(databases, 3)
 
+# Discover press releases and reports
+news_items <- statistical_resources(1, type = c("press", "report"))
+head(news_items, 3)
+
 # Filter direct file downloads
 file_tables <- tables[tables$node_type == "istab", ]
 head(file_tables$table_url, 3)
 ```
+
+`statistical_resources()` returns the full supported portal catalog for
+a theme: SDMX dataflows, direct file downloads, legacy databases, press
+releases, and reports.
 
 `statistical_tables()` returns a `node_type` column. Use `"dataflow"`
 rows for SDMX-backed datasets and `"istab"` rows for direct file

@@ -25,6 +25,18 @@ theme_tree_fixture <- list(
             name = "Archived XLS",
             icon = "istab",
             url = "/Download/abc123/table.xls"
+          ),
+          list(
+            id = 103,
+            name = "Justice Press Release",
+            icon = "press",
+            url = "/PressRelease/Details/123"
+          ),
+          list(
+            id = 104,
+            name = "Justice Annual Report",
+            icon = "report",
+            url = "/Report/Details/456"
           )
         )
       )
@@ -64,14 +76,46 @@ test_that("build_statistical_portal_request rejects unsupported languages", {
 test_that("collect_nodes_by_icon recurses through nested children", {
   collected_nodes <- tuikr:::collect_nodes_by_icon(
     theme_tree_fixture[[1]]$children,
-    c("dataflow", "istab")
+    c("dataflow", "istab", "press", "report")
   )
 
-  expect_length(collected_nodes, 2)
-  expect_equal(vapply(collected_nodes, `[[`, character(1), "icon"), c("dataflow", "istab"))
+  expect_length(collected_nodes, 4)
+  expect_equal(
+    vapply(collected_nodes, `[[`, character(1), "icon"),
+    c("dataflow", "istab", "press", "report")
+  )
 })
 
-test_that("build_statistical_table_tibble maps dataflow and file nodes", {
+test_that("build_statistical_resource_tibble maps supported portal resources", {
+  resource_rows <- tuikr:::build_statistical_resource_tibble(theme_tree_fixture[[1]])
+
+  expect_s3_class(resource_rows, "tbl_df")
+  expect_named(
+    resource_rows,
+    c("theme_name", "theme_id", "resource_name", "resource_type", "dataflow_id", "resource_url")
+  )
+  expect_equal(resource_rows$theme_id, rep("1", 5))
+  expect_equal(
+    resource_rows$resource_type,
+    c("dataflow", "database", "istab", "press", "report")
+  )
+  expect_equal(
+    resource_rows$dataflow_id,
+    c("TR,DF_CRIME,1.0", NA_character_, NA_character_, NA_character_, NA_character_)
+  )
+  expect_equal(
+    resource_rows$resource_url,
+    c(
+      "https://databrowser2.tuik.gov.tr/dataflow/TR,DF_CRIME,1.0",
+      "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr",
+      "https://veriportali.tuik.gov.tr/Download/abc123/table.xls",
+      "https://veriportali.tuik.gov.tr/PressRelease/Details/123",
+      "https://veriportali.tuik.gov.tr/Report/Details/456"
+    )
+  )
+})
+
+test_that("build_statistical_table_tibble maps dataflow and file nodes only", {
   table_rows <- tuikr:::build_statistical_table_tibble(theme_tree_fixture[[1]])
 
   expect_s3_class(table_rows, "tbl_df")

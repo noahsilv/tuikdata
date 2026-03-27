@@ -1,8 +1,10 @@
 #' Get Statistical Tables for a Theme from TUIK
 #'
-#' Retrieves statistical tables and SDMX dataflows for a specific theme from
+#' Retrieves SDMX dataflows and direct file downloads for a specific theme from
 #' the TUIK data portal. Theme IDs can be obtained using
-#' \code{\link{statistical_themes}}.
+#' \code{\link{statistical_themes}}. This is a filtered convenience wrapper
+#' around \code{\link{statistical_resources}} for \code{"dataflow"} and
+#' \code{"istab"} resources.
 #'
 #' @param theme Character or numeric. A single theme ID (e.g., \code{"11"} or
 #'   \code{11}). Only one theme can be queried at a time. Invalid or multiple
@@ -38,6 +40,9 @@
 #' # Get tables for Population and Demography (theme 11)
 #' tables <- statistical_tables(11)
 #'
+#' # Get the broader resource catalog for the same theme
+#' resources <- statistical_resources(11)
+#'
 #' # Filter to SDMX dataflows only
 #' dataflows <- dplyr::filter(tables, node_type == "dataflow")
 #'
@@ -52,8 +57,19 @@
 #'
 #' @export
 statistical_tables <- function(theme, lang = "tr") {
-  theme_tree <- fetch_theme_tree(lang)
-  theme_node <- validate_theme(theme, theme_tree)
-  table_rows <- build_statistical_table_tibble(theme_node)
-  return(table_rows)
+  resource_rows <- statistical_resources(
+    theme = theme,
+    type = c("dataflow", "istab"),
+    lang = lang
+  )
+
+  return(dplyr::transmute(
+    resource_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    table_name = .data$resource_name,
+    node_type = .data$resource_type,
+    dataflow_id = .data$dataflow_id,
+    table_url = .data$resource_url
+  ))
 }

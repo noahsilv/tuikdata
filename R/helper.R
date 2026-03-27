@@ -218,65 +218,98 @@ extract_dataflow_id <- function(raw_url) {
   return(stringr::str_extract(raw_url, "[^/]+$"))
 }
 
-build_statistical_table_tibble <- function(theme_node) {
-  table_nodes <- collect_nodes_by_icon(
+validate_statistical_resource_types <- function(type) {
+  valid_types <- c("press", "database", "istab", "dataflow", "report")
+
+  if (is.null(type)) {
+    return(type)
+  }
+
+  if (!is.character(type) || length(type) == 0 || any(is.na(type))) {
+    stop(
+      "type must be NULL or a character vector of supported resource types.",
+      call. = FALSE
+    )
+  }
+
+  if (!all(type %in% valid_types)) {
+    stop(
+      "type must be one or more of: press, database, istab, dataflow, report.",
+      call. = FALSE
+    )
+  }
+
+  return(unique(type))
+}
+
+build_statistical_resource_tibble <- function(theme_node) {
+  resource_nodes <- collect_nodes_by_icon(
     theme_node[["children"]],
-    c("istab", "dataflow")
+    c("press", "database", "istab", "dataflow", "report")
   )
 
-  if (length(table_nodes) == 0) {
+  if (length(resource_nodes) == 0) {
     return(tibble::tibble(
       theme_name = character(0),
       theme_id = character(0),
-      table_name = character(0),
-      node_type = character(0),
+      resource_name = character(0),
+      resource_type = character(0),
       dataflow_id = character(0),
-      table_url = character(0)
+      resource_url = character(0)
     ))
   }
 
-  node_type_vec <- purrr::map_chr(table_nodes, "icon")
-  raw_urls <- purrr::map_chr(table_nodes, "url")
+  resource_type_vec <- purrr::map_chr(resource_nodes, "icon")
+  raw_urls <- purrr::map_chr(resource_nodes, "url")
 
-  table_rows <- tibble::tibble(
+  resource_rows <- tibble::tibble(
     theme_name = theme_node[["name"]],
     theme_id = as.character(theme_node[["id"]]),
-    table_name = purrr::map_chr(table_nodes, "name"),
-    node_type = node_type_vec,
+    resource_name = purrr::map_chr(resource_nodes, "name"),
+    resource_type = resource_type_vec,
     dataflow_id = unname(ifelse(
-      node_type_vec == "dataflow",
+      resource_type_vec == "dataflow",
       vapply(raw_urls, extract_dataflow_id, character(1)),
       NA_character_
     )),
-    table_url = unname(vapply(raw_urls, normalize_statistical_url, character(1)))
+    resource_url = unname(vapply(raw_urls, normalize_statistical_url, character(1)))
   )
 
-  return(table_rows)
+  return(resource_rows)
+}
+
+build_statistical_table_tibble <- function(theme_node) {
+  resource_rows <- build_statistical_resource_tibble(theme_node)
+  table_rows <- dplyr::filter(
+    resource_rows,
+    .data$resource_type %in% c("dataflow", "istab")
+  )
+
+  return(dplyr::transmute(
+    table_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    table_name = .data$resource_name,
+    node_type = .data$resource_type,
+    dataflow_id = .data$dataflow_id,
+    table_url = .data$resource_url
+  ))
 }
 
 build_statistical_database_tibble <- function(theme_node) {
-  database_nodes <- collect_nodes_by_icon(
-    theme_node[["children"]],
-    "database"
+  resource_rows <- build_statistical_resource_tibble(theme_node)
+  database_rows <- dplyr::filter(
+    resource_rows,
+    .data$resource_type == "database"
   )
 
-  if (length(database_nodes) == 0) {
-    return(tibble::tibble(
-      theme_name = character(0),
-      theme_id = character(0),
-      db_name = character(0),
-      db_url = character(0)
-    ))
-  }
-
-  database_rows <- tibble::tibble(
-    theme_name = theme_node[["name"]],
-    theme_id = as.character(theme_node[["id"]]),
-    db_name = purrr::map_chr(database_nodes, "name"),
-    db_url = purrr::map_chr(database_nodes, "url")
-  )
-
-  return(database_rows)
+  return(dplyr::transmute(
+    database_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    db_name = .data$resource_name,
+    db_url = .data$resource_url
+  ))
 }
 
 validate_theme <- function(theme, theme_tree) {

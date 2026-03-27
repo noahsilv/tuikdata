@@ -35,6 +35,10 @@ databases <- statistical_databases("1")
 
 Check for package updates, report issues on [GitHub](https://github.com/emraher/tuikr/issues), or use geographic functions (separate stable JSON API).
 
+`statistical_resources()` can still help even when one resource category breaks.
+For example, press releases or reports may remain available as URLs even if a
+specific download pattern changes elsewhere in the portal.
+
 ## Messy Excel Files
 
 ### The Problem

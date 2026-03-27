@@ -26,18 +26,25 @@ A tibble with 4 columns:
 \description{
 Retrieves interactive database URLs for a specific theme from the TUIK data
 portal. Theme IDs can be obtained using \code{\link{statistical_themes}}.
+This is a filtered convenience wrapper around
+\code{\link{statistical_resources}} for \code{"database"} resources.
 }
 \note{
 Database URLs link to the legacy \code{biruni.tuik.gov.tr} interactive
 query interface, not direct downloads. For SDMX-backed datasets, use
 \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
 then use \code{\link{statistical_data}} or
-\code{\link{statistical_data_structure}}.
+\code{\link{statistical_data_structure}}. For press releases and reports,
+use \code{\link{statistical_resources}} with \code{type = "press"} or
+\code{type = "report"}.
 }
 \examples{
 \dontrun{
 # Get databases for Population and Demography (theme 11)
 databases <- statistical_databases(11)
+
+# Retrieve press releases for the same theme
+press_releases <- statistical_resources(11, type = "press")
 
 # Open a database in the browser
 browseURL(databases$db_url[1])

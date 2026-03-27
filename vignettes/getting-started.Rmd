@@ -69,6 +69,21 @@ Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive data
 which is the canonical machine identifier used by `statistical_data()` and
 `statistical_data_structure()`.
 
+### Step 3: Discover All Portal Resources
+
+If you want more than tables, use the broader resource catalog:
+
+```{r resources}
+# Get every supported portal resource for the same theme
+justice_resources <- statistical_resources("1")
+
+# Keep only press releases and reports
+justice_publications <- statistical_resources(
+  "1",
+  type = c("press", "report")
+)
+```
+
 The function validates input:
 
 ```{r validate, error=TRUE, eval=FALSE}
@@ -83,7 +98,7 @@ statistical_tables(c("1", "2"))
 #> Error: You can select only one theme!
 ```
 
-### Step 3: Get Database URLs
+### Step 4: Get Database URLs
 
 Retrieve legacy interactive database URLs:
 

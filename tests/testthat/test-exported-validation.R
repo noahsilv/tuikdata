@@ -11,3 +11,10 @@ test_that("geo_map validates the level argument", {
     "level must be 2, 3, 4, or 9"
   )
 })
+
+test_that("statistical_resources validates supported resource types", {
+  expect_error(
+    statistical_resources(theme = 1, type = "video"),
+    "type must be one or more of"
+  )
+})

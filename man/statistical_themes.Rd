@@ -19,9 +19,10 @@ A tibble with 2 columns:
 }
 \description{
 Retrieves all top-level statistical themes from the TUIK data portal.
-Theme IDs are used with \code{\link{statistical_tables}} and
-\code{\link{statistical_databases}} to access specific data. For SDMX-backed
-datasets, use \code{\link{statistical_tables}} to discover
+Theme IDs are used with \code{\link{statistical_resources}},
+\code{\link{statistical_tables}}, and \code{\link{statistical_databases}} to
+access specific portal resources. For SDMX-backed datasets, use
+\code{\link{statistical_tables}} or \code{\link{statistical_resources}} to discover
 \code{dataflow_id} values, then pass those identifiers to
 \code{\link{statistical_data}} or \code{\link{statistical_data_structure}}.
 }

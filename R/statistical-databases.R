@@ -2,6 +2,8 @@
 #'
 #' Retrieves interactive database URLs for a specific theme from the TUIK data
 #' portal. Theme IDs can be obtained using \code{\link{statistical_themes}}.
+#' This is a filtered convenience wrapper around
+#' \code{\link{statistical_resources}} for \code{"database"} resources.
 #'
 #' @param theme Character or numeric. A single theme ID (e.g., \code{"11"} or
 #'   \code{11}). Only one theme can be queried at a time. Invalid or multiple
@@ -21,12 +23,17 @@
 #'   query interface, not direct downloads. For SDMX-backed datasets, use
 #'   \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
 #'   then use \code{\link{statistical_data}} or
-#'   \code{\link{statistical_data_structure}}.
+#'   \code{\link{statistical_data_structure}}. For press releases and reports,
+#'   use \code{\link{statistical_resources}} with \code{type = "press"} or
+#'   \code{type = "report"}.
 #'
 #' @examples
 #' \dontrun{
 #' # Get databases for Population and Demography (theme 11)
 #' databases <- statistical_databases(11)
+#'
+#' # Retrieve press releases for the same theme
+#' press_releases <- statistical_resources(11, type = "press")
 #'
 #' # Open a database in the browser
 #' browseURL(databases$db_url[1])
@@ -34,8 +41,17 @@
 #'
 #' @export
 statistical_databases <- function(theme, lang = "tr") {
-  theme_tree <- fetch_theme_tree(lang)
-  theme_node <- validate_theme(theme, theme_tree)
-  database_rows <- build_statistical_database_tibble(theme_node)
-  return(database_rows)
+  resource_rows <- statistical_resources(
+    theme = theme,
+    type = "database",
+    lang = lang
+  )
+
+  return(dplyr::transmute(
+    resource_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    db_name = .data$resource_name,
+    db_url = .data$resource_url
+  ))
 }

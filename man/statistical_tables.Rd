@@ -29,9 +29,11 @@ interactive data browser. For \code{istab} nodes: direct download URL.}
 }
 }
 \description{
-Retrieves statistical tables and SDMX dataflows for a specific theme from
+Retrieves SDMX dataflows and direct file downloads for a specific theme from
 the TUIK data portal. Theme IDs can be obtained using
-\code{\link{statistical_themes}}.
+\code{\link{statistical_themes}}. This is a filtered convenience wrapper
+around \code{\link{statistical_resources}} for \code{"dataflow"} and
+\code{"istab"} resources.
 }
 \note{
 The TUIK portal distinguishes between SDMX dataflows (interactive
@@ -48,6 +50,9 @@ themes <- statistical_themes()
 
 # Get tables for Population and Demography (theme 11)
 tables <- statistical_tables(11)
+
+# Get the broader resource catalog for the same theme
+resources <- statistical_resources(11)
 
 # Filter to SDMX dataflows only
 dataflows <- dplyr::filter(tables, node_type == "dataflow")
