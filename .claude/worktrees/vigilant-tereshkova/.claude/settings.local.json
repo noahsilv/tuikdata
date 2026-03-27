@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/emraher/Workspace/tuikr worktree list)"
+    ]
+  }
+}
