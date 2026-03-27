@@ -64,6 +64,9 @@ geo_map <- function(level = 2, dataframe = FALSE) {
     }
   )
 
+  # The TUIK API returns `"type":["FeatureCollection"]` (array-wrapped) instead
+  # of `"type":"FeatureCollection"`, which is invalid GeoJSON. sf::read_sf()
+  # rejects it. The replacement below fixes the upstream defect before parsing.
   dt_sf <- map_json_data |>
     jsonlite::toJSON() |>
     stringr::str_replace_all('\\[\"FeatureCollection\"\\]', '\"FeatureCollection\"') |>
