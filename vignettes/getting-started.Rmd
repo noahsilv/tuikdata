@@ -66,8 +66,7 @@ head(justice_tables)
 
 Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive datasets,
 `"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id`,
-which is the canonical machine identifier used by `statistical_data()` and
-`statistical_data_structure()`.
+which is the canonical machine identifier used by `statistical_data()`.
 
 ### Step 3: Discover All Portal Resources
 
@@ -117,19 +116,14 @@ Access SDMX-backed datasets through the exported download helpers:
 # Filter to SDMX dataflows
 dataflows <- dplyr::filter(justice_tables, node_type == "dataflow")
 
-# Inspect structure metadata first
-justice_structure <- statistical_data_structure(dataflows$dataflow_id[1])
-
 # Download observations
 justice_data <- statistical_data(
   dataflow_id = dataflows$dataflow_id[1]
 )
 ```
 
-Start with `statistical_data_structure()` when you need to understand the SDMX
-dimensions and codelists behind a dataset. `statistical_data()` uses the same
-`dataflow_id` and defaults to `key = "ALL"`, but some datasets require a more
-specific SDMX key once you inspect their structure metadata.
+`statistical_data()` uses the same `dataflow_id` and defaults to
+`key = "ALL"`, but some datasets require a more specific SDMX key.
 
 ### File Downloads
 

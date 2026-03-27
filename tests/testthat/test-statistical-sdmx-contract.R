@@ -24,10 +24,6 @@ test_that("sdmx contract is documented in source files", {
     info = "`README.Rmd` should introduce the SDMX data download function."
   )
   expect_true(
-    any(grepl("statistical_data_structure(", readme_lines, fixed = TRUE)),
-    info = "`README.Rmd` should introduce the SDMX structure helper."
-  )
-  expect_true(
     any(grepl("dataflow_id", readme_lines, fixed = TRUE)),
     info = "`README.Rmd` should document `dataflow_id` as the SDMX identifier."
   )

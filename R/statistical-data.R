@@ -51,24 +51,8 @@ statistical_data <- function(dataflow_id,
   return(sdmx_data)
 }
 
-#' Download SDMX Structure Metadata from TUIK
-#'
-#' Downloads the SDMX structure metadata for a TUIK dataflow and returns a
-#' small wrapper that keeps the raw `rsdmx` object available.
-#'
-#' @param dataflow_id Character string. SDMX dataflow identifier from
-#'   \code{\link{statistical_tables}}.
-#' @param detail Character string. Default \code{"Full"}.
-#' @param references Character string. Default \code{"Descendants"}.
-#'
-#' @return A list with at least `dataflow_id`, `structure_url`, and `raw_sdmx`.
-#'
-#' @examples
-#' \dontrun{
-#' statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0")
-#' }
-#'
-#' @export
+# Internal SDMX structure helper used for metadata-aware workflows.
+# Keeps the raw rsdmx object available without exposing it as public API.
 statistical_data_structure <- function(dataflow_id,
                                        detail = "Full",
                                        references = "Descendants") {

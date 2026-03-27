@@ -6,7 +6,7 @@
 #' access specific portal resources. For SDMX-backed datasets, use
 #' \code{\link{statistical_tables}} or \code{\link{statistical_resources}} to discover
 #' \code{dataflow_id} values, then pass those identifiers to
-#' \code{\link{statistical_data}} or \code{\link{statistical_data_structure}}.
+#' \code{\link{statistical_data}}.
 #'
 #' @param lang Character string. Portal language code. Default \code{"tr"} for
 #'   Turkish. Use \code{"en"} for English.

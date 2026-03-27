@@ -29,8 +29,7 @@
 #'   query interface via \url{https://databrowser2.tuik.gov.tr}) and static
 #'   file downloads (\code{istab}). \code{dataflow_id} is the canonical
 #'   machine identifier for SDMX-backed datasets. Use it with
-#'   \code{\link{statistical_data}} to download observations and with
-#'   \code{\link{statistical_data_structure}} to inspect structure metadata.
+#'   \code{\link{statistical_data}} to download observations.
 #'
 #' @examples
 #' \dontrun{
@@ -45,9 +44,6 @@
 #'
 #' # Filter to SDMX dataflows only
 #' dataflows <- dplyr::filter(tables, node_type == "dataflow")
-#'
-#' # Inspect structure metadata for one dataflow
-#' structure_info <- statistical_data_structure(dataflows$dataflow_id[1])
 #'
 #' # Download observations for one dataflow
 #' sdmx_data <- statistical_data(

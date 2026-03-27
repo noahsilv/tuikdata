@@ -28,8 +28,7 @@
 #' }
 #'
 #' @details Use \code{resource_type} to decide how to handle a resource:
-#' \code{"dataflow"} rows work with \code{\link{statistical_data}} and
-#' \code{\link{statistical_data_structure}}; \code{"istab"},
+#' \code{"dataflow"} rows work with \code{\link{statistical_data}}; \code{"istab"},
 #' \code{"press"}, and \code{"report"} rows expose downloadable or browsable
 #' URLs; \code{"database"} rows point to the legacy interactive database
 #' interface.

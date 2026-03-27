@@ -50,9 +50,6 @@ head(resources, 3)
 sdmx_tables <- tables[tables$node_type == "dataflow", ]
 head(sdmx_tables, 3)
 
-# Inspect structure metadata before building dataset-specific keys
-structure_info <- statistical_data_structure(sdmx_tables$dataflow_id[1])
-
 # Download observations for one SDMX dataflow
 sdmx_data <- statistical_data(sdmx_tables$dataflow_id[1])
 head(sdmx_data, 3)
@@ -79,10 +76,9 @@ rows for SDMX-backed datasets and `"istab"` rows for direct file
 downloads exposed in `table_url`.
 
 `dataflow_id` is the canonical machine identifier for SDMX-backed
-datasets. Use `statistical_data_structure()` when you need metadata
-about dimensions and codes, then use `statistical_data()` to download
-observations. Some datasets work with the default `key = "ALL"`, while
-others need a more specific SDMX key built from the structure metadata.
+datasets. Use `statistical_data()` to download observations. Some
+datasets work with the default `key = "ALL"`, while others need a more
+specific SDMX key.
 
 ### Geographic Data
 

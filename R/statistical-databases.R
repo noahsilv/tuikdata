@@ -22,8 +22,7 @@
 #' @note Database URLs link to the legacy \code{biruni.tuik.gov.tr} interactive
 #'   query interface, not direct downloads. For SDMX-backed datasets, use
 #'   \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
-#'   then use \code{\link{statistical_data}} or
-#'   \code{\link{statistical_data_structure}}. For press releases and reports,
+#'   then use \code{\link{statistical_data}}. For press releases and reports,
 #'   use \code{\link{statistical_resources}} with \code{type = "press"} or
 #'   \code{type = "report"}.
 #'

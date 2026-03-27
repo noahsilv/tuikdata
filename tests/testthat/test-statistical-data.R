@@ -5,9 +5,9 @@ test_that("statistical_data validates dataflow_id before any network call", {
   )
 })
 
-test_that("statistical_data_structure validates dataflow_id before any network call", {
+test_that("internal structure helper validates dataflow_id before any network call", {
   expect_error(
-    statistical_data_structure("bad-id"),
+    tuikr:::statistical_data_structure("bad-id"),
     "dataflow_id must be a single SDMX identifier"
   )
 })
@@ -29,14 +29,14 @@ test_that("statistical_data downloads a TUIK SDMX dataset", {
   expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(uhti_data)))
 })
 
-test_that("statistical_data_structure downloads TUIK SDMX metadata", {
+test_that("internal structure helper downloads TUIK SDMX metadata", {
   skip_if_not(
     identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
     "Set RUN_NETWORK_TESTS=true to run network integration tests."
   )
   skip_if_offline()
 
-  structure_info <- statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0")
+  structure_info <- tuikr:::statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0")
 
   expect_type(structure_info, "list")
   expect_true(all(c("dataflow_id", "structure_url", "raw_sdmx") %in% names(structure_info)))
@@ -73,13 +73,13 @@ test_that("statistical_data validates SDMX arguments before URL construction", {
   )
 })
 
-test_that("statistical_data_structure validates SDMX arguments before URL construction", {
+test_that("internal structure helper validates SDMX arguments before URL construction", {
   expect_error(
-    statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0", detail = c("Full", "Full")),
+    tuikr:::statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0", detail = c("Full", "Full")),
     "detail must be a single non-NA character string"
   )
   expect_error(
-    statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0", references = NA_character_),
+    tuikr:::statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0", references = NA_character_),
     "references must be a single non-NA character string"
   )
 })

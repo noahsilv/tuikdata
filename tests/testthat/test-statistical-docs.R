@@ -47,7 +47,6 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(any(grepl("table_url", readme_rmd_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources(", readme_rmd_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", readme_rmd_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data_structure(", readme_rmd_lines, fixed = TRUE)))
   expect_false(any(grepl("datafile_url", readme_rmd_lines, fixed = TRUE)))
   expect_false(any(grepl("statistical_tables\\(110\\)", readme_rmd_lines)))
   expect_false(any(grepl("nsiws.tuik.gov.tr/rest/data", readme_rmd_lines, fixed = TRUE)))
@@ -57,7 +56,6 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(any(grepl("table_url", readme_md_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources(", readme_md_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", readme_md_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data_structure(", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("data_name", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("datafile_url", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("nsiws.tuik.gov.tr/rest/data", readme_md_lines, fixed = TRUE)))
@@ -66,31 +64,25 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   first_tables_line <- which(grepl("statistical_tables(", getting_started_lines, fixed = TRUE))[1]
   first_resources_line <- which(grepl("statistical_resources(", getting_started_lines, fixed = TRUE))[1]
   first_data_line <- which(grepl("justice_data <- statistical_data(", getting_started_lines, fixed = TRUE))[1]
-  first_structure_line <- which(grepl("justice_structure <- statistical_data_structure(", getting_started_lines, fixed = TRUE))[1]
 
   expect_false(is.na(first_tables_line))
   expect_false(is.na(first_resources_line))
   expect_false(is.na(first_data_line))
-  expect_false(is.na(first_structure_line))
   expect_true(first_tables_line < first_resources_line)
-  expect_true(first_resources_line < first_structure_line)
-  expect_true(first_structure_line < first_data_line)
+  expect_true(first_resources_line < first_data_line)
   expect_false(any(grepl("databrowser2.tuik.gov.tr/api/core/nodes", getting_started_lines, fixed = TRUE)))
 
   expect_true(any(grepl("SDMX Key Complexity", known_issues_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources()", known_issues_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data_structure(", known_issues_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", known_issues_lines, fixed = TRUE)))
 
   expect_true(any(grepl("resource_type", resources_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data", resources_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", tables_r_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data_structure(", tables_r_lines, fixed = TRUE)))
   expect_true(any(grepl("dataflow_id", tables_r_lines, fixed = TRUE)))
   expect_false(any(grepl("databrowser2.tuik.gov.tr/api/core/nodes", tables_r_lines, fixed = TRUE)))
 
   expect_true(any(grepl("statistical_data", databases_r_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data_structure", databases_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources", databases_r_lines, fixed = TRUE)))
   expect_true(any(grepl("dataflow_id", themes_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources", themes_r_lines, fixed = TRUE)))
