@@ -80,6 +80,25 @@ test_that("normalize_sdmx_data trims character columns from tabular inputs", {
   expect_equal(normalized_data$obsValue, c("174.4", "170.1"))
 })
 
+test_that("normalize_sdmx_data handles a live rsdmx document", {
+  skip_if_not(
+    identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
+    "Set RUN_NETWORK_TESTS=true to run network integration tests."
+  )
+  skip_if_offline()
+
+  data_url <- tuikr:::build_sdmx_data_url(
+    "TR,DF_UHTI_COGRAFI,1.0",
+    key = "TR....../ALL"
+  )
+  sdmx_document <- tuikr:::read_sdmx_document(data_url)
+  normalized_data <- tuikr:::normalize_sdmx_data(sdmx_document)
+
+  expect_s3_class(normalized_data, "tbl_df")
+  expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(normalized_data)))
+  expect_true(nrow(normalized_data) > 0)
+})
+
 test_that("build helpers derive rows from the theme tree", {
   table_rows <- tuikr:::build_statistical_table_tibble(theme_tree_fixture[[1]])
   database_rows <- tuikr:::build_statistical_database_tibble(theme_tree_fixture[[1]])
