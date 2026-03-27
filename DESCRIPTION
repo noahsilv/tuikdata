@@ -25,6 +25,7 @@ Imports:
     tibble,
     janitor,
     jsonlite,
+    rsdmx,
     tidyr,
     sf
 Suggests:
