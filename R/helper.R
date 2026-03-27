@@ -120,6 +120,26 @@ normalize_sdmx_data <- function(sdmx_document) {
   return(normalized_tibble)
 }
 
+clean_statistical_long_data <- function(sdmx_data) {
+  protected_cols <- c("obsTime", "obsValue")
+  candidate_cols <- setdiff(names(sdmx_data), protected_cols)
+  keep_cols <- vapply(
+    candidate_cols,
+    function(column_name) {
+      column_values <- sdmx_data[[column_name]]
+      unique_values <- unique(column_values[!is.na(column_values)])
+
+      return(length(unique_values) > 1)
+    },
+    logical(1)
+  )
+
+  kept_candidate_cols <- candidate_cols[keep_cols]
+  kept_cols <- names(sdmx_data)[names(sdmx_data) %in% c(kept_candidate_cols, protected_cols)]
+
+  return(dplyr::select(sdmx_data, dplyr::all_of(kept_cols)))
+}
+
 build_databrowser_structure_url <- function(dataflow_id, lang = "tr") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   validated_lang <- validate_statistical_lang(lang)
