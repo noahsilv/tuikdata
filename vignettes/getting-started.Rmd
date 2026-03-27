@@ -65,8 +65,9 @@ head(justice_tables)
 ```
 
 Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive datasets,
-`"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id` for
-programmatic access via the `databrowser2.tuik.gov.tr` API.
+`"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id`,
+which is the canonical machine identifier used by `statistical_data()` and
+`statistical_data_structure()`.
 
 The function validates input:
 
@@ -95,18 +96,25 @@ justice_dbs <- statistical_databases("1")
 
 ### SDMX Dataflows
 
-Access data programmatically via the SDMX API:
+Access SDMX-backed datasets through the exported download helpers:
 
 ```{r sdmx}
 # Filter to SDMX dataflows
 dataflows <- dplyr::filter(justice_tables, node_type == "dataflow")
 
-# Build SDMX data endpoint
-sdmx_url <- paste0(
-  "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
-  dataflows$dataflow_id[1], "/data"
+# Inspect structure metadata first
+justice_structure <- statistical_data_structure(dataflows$dataflow_id[1])
+
+# Download observations
+justice_data <- statistical_data(
+  dataflow_id = dataflows$dataflow_id[1]
 )
 ```
+
+Start with `statistical_data_structure()` when you need to understand the SDMX
+dimensions and codelists behind a dataset. `statistical_data()` uses the same
+`dataflow_id` and defaults to `key = "ALL"`, but some datasets require a more
+specific SDMX key once you inspect their structure metadata.
 
 ### File Downloads
 

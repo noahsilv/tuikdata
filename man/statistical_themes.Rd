@@ -20,12 +20,14 @@ A tibble with 2 columns:
 \description{
 Retrieves all top-level statistical themes from the TUIK data portal.
 Theme IDs are used with \code{\link{statistical_tables}} and
-\code{\link{statistical_databases}} to access specific data.
+\code{\link{statistical_databases}} to access specific data. For SDMX-backed
+datasets, use \code{\link{statistical_tables}} to discover
+\code{dataflow_id} values, then pass those identifiers to
+\code{\link{statistical_data}} or \code{\link{statistical_data_structure}}.
 }
 \examples{
 \dontrun{
 themes <- statistical_themes()
-print(themes)
 }
 
 }

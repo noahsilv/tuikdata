@@ -1,14 +1,14 @@
 test_that("statistical_data validates dataflow_id before any network call", {
   expect_error(
     statistical_data("bad-id"),
-    "dataflow_id must have three comma-separated parts"
+    "dataflow_id must be a single SDMX identifier"
   )
 })
 
 test_that("statistical_data_structure validates dataflow_id before any network call", {
   expect_error(
     statistical_data_structure("bad-id"),
-    "dataflow_id must have three comma-separated parts"
+    "dataflow_id must be a single SDMX identifier"
   )
 })
 

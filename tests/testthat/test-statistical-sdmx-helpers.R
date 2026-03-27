@@ -22,11 +22,11 @@ theme_tree_fixture <- list(
 test_that("validate_dataflow_id rejects malformed values", {
   expect_error(
     tuikr:::validate_dataflow_id(1),
-    "dataflow_id must be a single character string"
+    "dataflow_id must be a single SDMX identifier"
   )
   expect_error(
     tuikr:::validate_dataflow_id("bad-id"),
-    "dataflow_id must have three comma-separated parts"
+    "dataflow_id must be a single SDMX identifier"
   )
 })
 

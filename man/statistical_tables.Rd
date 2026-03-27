@@ -36,8 +36,10 @@ the TUIK data portal. Theme IDs can be obtained using
 \note{
 The TUIK portal distinguishes between SDMX dataflows (interactive
 query interface via \url{https://databrowser2.tuik.gov.tr}) and static
-file downloads (\code{istab}). Use \code{dataflow_id} with the
-\code{databrowser2.tuik.gov.tr} API for programmatic SDMX data access.
+file downloads (\code{istab}). \code{dataflow_id} is the canonical
+machine identifier for SDMX-backed datasets. Use it with
+\code{\link{statistical_data}} to download observations and with
+\code{\link{statistical_data_structure}} to inspect structure metadata.
 }
 \examples{
 \dontrun{
@@ -50,10 +52,12 @@ tables <- statistical_tables(11)
 # Filter to SDMX dataflows only
 dataflows <- dplyr::filter(tables, node_type == "dataflow")
 
-# Use dataflow_id with the SDMX API
-sdmx_url <- paste0(
-  "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
-  dataflows$dataflow_id[1], "/data"
+# Inspect structure metadata for one dataflow
+structure_info <- statistical_data_structure(dataflows$dataflow_id[1])
+
+# Download observations for one dataflow
+sdmx_data <- statistical_data(
+  dataflow_id = dataflows$dataflow_id[1]
 )
 }
 

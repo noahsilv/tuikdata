@@ -7,7 +7,10 @@ NULL
 validate_dataflow_id <- function(dataflow_id) {
   if (!is.character(dataflow_id) || length(dataflow_id) != 1 || is.na(dataflow_id)) {
     stop(
-      "dataflow_id must be a single character string like 'TR,DF_UHTI_COGRAFI,1.0'.",
+      paste(
+        "dataflow_id must be a single SDMX identifier like",
+        "'TR,DF_UHTI_COGRAFI,1.0'."
+      ),
       call. = FALSE
     )
   }
@@ -15,7 +18,10 @@ validate_dataflow_id <- function(dataflow_id) {
   dataflow_parts <- base::strsplit(dataflow_id, ",", fixed = TRUE)[[1]]
   if (length(dataflow_parts) != 3 || any(base::nchar(dataflow_parts) == 0)) {
     stop(
-      "dataflow_id must have three comma-separated parts like 'TR,DF_UHTI_COGRAFI,1.0'.",
+      paste(
+        "dataflow_id must be a single SDMX identifier with three",
+        "comma-separated parts like 'TR,DF_UHTI_COGRAFI,1.0'."
+      ),
       call. = FALSE
     )
   }

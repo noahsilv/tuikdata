@@ -37,7 +37,7 @@ devtools::install_github("emraher/tuikr")
 
 ### Statistical Data
 
-```{r statistical-example}
+```{r statistical-example, eval = FALSE}
 library(tuikr)
 
 # List all themes
@@ -48,26 +48,39 @@ head(themes)
 tables <- statistical_tables(1)
 head(tables, 3)
 
-# Filter direct file downloads
-file_tables <- tables[tables$node_type == "istab", ]
-head(file_tables$table_url, 3)
+# Filter SDMX-backed rows
+sdmx_tables <- tables[tables$node_type == "dataflow", ]
+head(sdmx_tables, 3)
+
+# Inspect structure metadata before building dataset-specific keys
+structure_info <- statistical_data_structure(sdmx_tables$dataflow_id[1])
+
+# Download observations for one SDMX dataflow
+sdmx_data <- statistical_data(sdmx_tables$dataflow_id[1])
+head(sdmx_data, 3)
 
 # Get legacy database URLs for the same theme
 databases <- statistical_databases(1)
 head(databases, 3)
+
+# Filter direct file downloads
+file_tables <- tables[tables$node_type == "istab", ]
+head(file_tables$table_url, 3)
 ```
 
 `statistical_tables()` returns a `node_type` column. Use `"dataflow"` rows for
 SDMX-backed datasets and `"istab"` rows for direct file downloads exposed in
 `table_url`.
 
-The planned SDMX layer in this rewrite centers on `statistical_data_structure()`
-for metadata and `statistical_data()` for downloads. Both entry points will use
-`dataflow_id` values returned by `statistical_tables()` once they are added.
+`dataflow_id` is the canonical machine identifier for SDMX-backed datasets.
+Use `statistical_data_structure()` when you need metadata about dimensions and
+codes, then use `statistical_data()` to download observations. Some datasets
+work with the default `key = "ALL"`, while others need a more specific SDMX
+key built from the structure metadata.
 
 ### Geographic Data
 
-```{r geographic-example}
+```{r geographic-example, eval = FALSE}
 library(dplyr)
 
 # List available geographic variables

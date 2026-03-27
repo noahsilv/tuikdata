@@ -18,8 +18,10 @@
 #' }
 #'
 #' @note Database URLs link to the legacy \code{biruni.tuik.gov.tr} interactive
-#'   query interface, not direct downloads. For SDMX-based datasets, use
-#'   \code{\link{statistical_tables}} and filter by \code{node_type == "dataflow"}.
+#'   query interface, not direct downloads. For SDMX-backed datasets, use
+#'   \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
+#'   then use \code{\link{statistical_data}} or
+#'   \code{\link{statistical_data_structure}}.
 #'
 #' @examples
 #' \dontrun{

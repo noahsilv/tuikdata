@@ -153,6 +153,23 @@ all_tables <- purrr::map_df(theme_ids, function(id) {
 })
 ```
 
+### SDMX Key Complexity
+
+Some SDMX datasets can be downloaded with the default `key = "ALL"`, but others
+require a dataset-specific key that matches the available dimensions in the
+structure metadata.
+
+```{r sdmx_structure}
+structure_info <- statistical_data_structure("TR,DF_UHTI_COGRAFI,1.0")
+```
+
+Inspect the structure metadata before assuming that `ALL` is the right query.
+The safest workflow is:
+
+1. Discover a `dataflow_id` with `statistical_tables()`.
+2. Inspect the dimensions with `statistical_data_structure()`.
+3. Use `statistical_data()` once you know whether the default key is sufficient.
+
 ### Data Availability by Level
 
 Not all variables are available at all NUTS levels. The `geo_data()` function will error if you request an unavailable level:

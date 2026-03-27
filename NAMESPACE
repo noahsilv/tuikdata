@@ -2,6 +2,8 @@
 
 export(geo_data)
 export(geo_map)
+export(statistical_data)
+export(statistical_data_structure)
 export(statistical_databases)
 export(statistical_tables)
 export(statistical_themes)

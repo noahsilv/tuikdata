@@ -70,7 +70,9 @@ geo_map <- function(level = 2, dataframe = FALSE) {
   dt_sf <- map_json_data |>
     jsonlite::toJSON() |>
     stringr::str_replace_all('\\[\"FeatureCollection\"\\]', '\"FeatureCollection\"') |>
-    sf::read_sf()
+    sf::read_sf() |>
+    dplyr::select(-name) |>
+    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
 
   if (level != 9) {
     dt_sf <- dt_sf |>
@@ -82,5 +84,5 @@ geo_map <- function(level = 2, dataframe = FALSE) {
     return(dt_sf)
   }
 
-  sf::st_drop_geometry(dt_sf)
+  return(sf::st_drop_geometry(dt_sf))
 }
