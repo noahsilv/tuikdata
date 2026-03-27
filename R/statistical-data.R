@@ -30,6 +30,11 @@ statistical_data <- function(dataflow_id,
                              detail = "full",
                              dimension_at_observation = "TIME_PERIOD") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
+  validate_statistical_sdmx_key(key)
+  validate_statistical_sdmx_optional_text(start, "start")
+  validate_statistical_sdmx_optional_text(end, "end")
+  validate_statistical_sdmx_text(detail, "detail")
+  validate_statistical_sdmx_text(dimension_at_observation, "dimension_at_observation")
 
   data_url <- build_sdmx_data_url(
     dataflow_id = validated_dataflow_id,
@@ -68,6 +73,8 @@ statistical_data_structure <- function(dataflow_id,
                                        detail = "Full",
                                        references = "Descendants") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
+  validate_statistical_sdmx_text(detail, "detail")
+  validate_statistical_sdmx_text(references, "references")
 
   structure_url <- build_sdmx_structure_url(
     dataflow_id = validated_dataflow_id,
@@ -84,4 +91,33 @@ statistical_data_structure <- function(dataflow_id,
   )
 
   return(structure_info)
+}
+
+validate_statistical_sdmx_text <- function(value, argument_name) {
+  if (!is.character(value) || length(value) != 1 || is.na(value)) {
+    stop(
+      argument_name, " must be a single non-NA character string.",
+      call. = FALSE
+    )
+  }
+
+  return(value)
+}
+
+validate_statistical_sdmx_key <- function(key) {
+  validate_statistical_sdmx_text(key, "key")
+
+  if (!base::nzchar(key)) {
+    stop("key must not be empty.", call. = FALSE)
+  }
+
+  return(key)
+}
+
+validate_statistical_sdmx_optional_text <- function(value, argument_name) {
+  if (is.null(value)) {
+    return(value)
+  }
+
+  validate_statistical_sdmx_text(value, argument_name)
 }
