@@ -22,6 +22,10 @@
 #' themes <- statistical_themes()
 #' }
 #'
+#' @seealso
+#' \code{\link{statistical_tables}}, \code{\link{statistical_resources}},
+#' \code{\link{statistical_databases}}, \code{\link{statistical_data}}
+#'
 #' @export
 statistical_themes <- function(lang = "tr") {
   theme_list <- fetch_theme_tree(lang)

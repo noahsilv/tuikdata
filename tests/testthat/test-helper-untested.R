@@ -113,3 +113,8 @@ test_that("validate_string_single enforces allowed_values when provided", {
     "lang must be one of:"
   )
 })
+
+test_that("normalize_statistical_url passes through http:// URLs unchanged", {
+  http_url <- "http://veriportali.tuik.gov.tr/data"
+  expect_equal(tuikr:::normalize_statistical_url(http_url), http_url)
+})

@@ -38,8 +38,18 @@
 #'
 #' @examples
 #' \dontrun{
-#' geo_map(level = 2)
+#' # Download NUTS-3 boundaries as sf object
+#' nuts3_sf <- geo_map(level = 3)
+#'
+#' # Drop geometry — return plain tibble for joins
+#' nuts3_tbl <- geo_map(level = 3, dataframe = TRUE)
+#'
+#' # Settlement points (POINT geometry)
+#' settlements <- geo_map(level = 9)
 #' }
+#'
+#' @seealso
+#' \code{\link{geo_data}} for geographic statistical data
 #'
 #' @export
 geo_map <- function(level = 2, dataframe = FALSE) {
@@ -69,9 +79,12 @@ geo_map <- function(level = 2, dataframe = FALSE) {
   dt_sf <- map_json_data |>
     jsonlite::toJSON() |>
     stringr::str_replace_all('\\[\"FeatureCollection\"\\]', '\"FeatureCollection\"') |>
-    sf::read_sf() |>
-    dplyr::select(-name) |>
-    dplyr::mutate(dplyr::across(where(is.character), stringr::str_trim))
+    sf::read_sf()
+
+  dt_sf$name <- NULL
+
+  character_columns <- purrr::map_lgl(dt_sf, is.character)
+  dt_sf[character_columns] <- purrr::map(dt_sf[character_columns], stringr::str_trim)
 
   if (level != 9) {
     dt_sf <- dt_sf |>

@@ -25,3 +25,18 @@ test_that("geo_data validates NUTS level", {
     "variable_level must be 2, 3, or 4"
   )
 })
+
+test_that("geo_map dataframe = TRUE drops geometry column", {
+  skip_if_not(
+    identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
+    "Set RUN_NETWORK_TESTS=true to run network integration tests."
+  )
+  skip_if_offline()
+
+  nuts2_tbl <- geo_map(level = 2, dataframe = TRUE)
+
+  expect_s3_class(nuts2_tbl, "tbl_df")
+  expect_false(inherits(nuts2_tbl, "sf"))
+  expect_false("geometry" %in% names(nuts2_tbl))
+  expect_true("code" %in% names(nuts2_tbl))
+})

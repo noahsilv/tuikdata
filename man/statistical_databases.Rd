@@ -50,3 +50,7 @@ browseURL(databases$db_url[1])
 }
 
 }
+\seealso{
+\code{\link{statistical_themes}}, \code{\link{statistical_resources}},
+\code{\link{statistical_tables}}
+}

@@ -114,3 +114,17 @@ test_that("build_statistical_resource_tibble maps supported portal resources", {
     )
   )
 })
+
+test_that("statistical_themes stops when fetch_theme_tree errors", {
+  testthat::local_mocked_bindings(
+    fetch_theme_tree = function(lang = "tr") {
+      stop("TUIK API returned an error: Service unavailable", call. = FALSE)
+    },
+    .package = "tuikr"
+  )
+
+  expect_error(
+    statistical_themes(),
+    "TUIK API returned an error"
+  )
+})

@@ -71,3 +71,6 @@ geo_data(
 }
 
 }
+\seealso{
+\code{\link{geo_map}} for administrative boundary geometries
+}

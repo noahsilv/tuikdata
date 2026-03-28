@@ -42,6 +42,10 @@
 #' statistical_data("TR,DF_ADNKS_T26,1.0", lang = "en")
 #' }
 #'
+#' @seealso
+#' \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
+#' \code{\link{statistical_resources}} for the full portal catalog
+#'
 #' @export
 statistical_data <- function(dataflow_id,
                              key = "ALL",

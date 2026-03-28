@@ -63,3 +63,8 @@ sdmx_data <- statistical_data(
 }
 
 }
+\seealso{
+\code{\link{statistical_themes}} to get theme IDs,
+\code{\link{statistical_resources}} for the full resource catalog,
+\code{\link{statistical_data}} to download SDMX observations
+}

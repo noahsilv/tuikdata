@@ -134,12 +134,30 @@ test_that("normalize_sdmx_data handles a live rsdmx document", {
   expect_true(nrow(normalized_data) > 0)
 })
 
-test_that("build helpers derive rows from the theme tree", {
-  table_rows <- tuikr:::build_statistical_table_tibble(theme_tree_fixture[[1]])
-  database_rows <- tuikr:::build_statistical_database_tibble(theme_tree_fixture[[1]])
+test_that("clean_statistical_long_data returns early when all candidate cols are invariant", {
+  long_data <- tibble::tibble(
+    REF_AREA = c("TR", "TR", "TR"),
+    obsTime = c("2021", "2022", "2023"),
+    obsValue = c(1.0, 2.0, 3.0)
+  )
 
-  expect_equal(table_rows$theme_id, "17")
-  expect_equal(table_rows$node_type, "dataflow")
-  expect_true(grepl("^https://databrowser2\\.tuik\\.gov\\.tr/#/tr/tuik/categories/", table_rows$table_url))
-  expect_equal(database_rows$db_url, "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr")
+  cleaned_long_data <- tuikr:::clean_statistical_long_data(long_data, label_maps = list())
+
+  expect_named(cleaned_long_data, c("obsTime", "obsValue"))
+  expect_equal(nrow(cleaned_long_data), 3L)
 })
+
+test_that("clean_statistical_long_data adds no label cols when label_maps is empty", {
+  long_data <- tibble::tibble(
+    INDICATOR = c("A", "B", "C"),
+    REF_AREA = c("TR", "DE", "US"),
+    obsTime = c("2023", "2023", "2023"),
+    obsValue = c(1.0, 2.0, 3.0)
+  )
+
+  cleaned_long_data <- tuikr:::clean_statistical_long_data(long_data, label_maps = list())
+
+  expect_named(cleaned_long_data, c("INDICATOR", "REF_AREA", "obsTime", "obsValue"))
+  expect_false(any(grepl("_label$", names(cleaned_long_data))))
+})
+

@@ -45,6 +45,12 @@
 #' )
 #' }
 #'
+#' @seealso
+#' \code{\link{statistical_themes}} to get theme IDs,
+#' \code{\link{statistical_tables}} for the tables-only view,
+#' \code{\link{statistical_databases}} for the databases-only view,
+#' \code{\link{statistical_data}} to download SDMX observations
+#'
 #' @export
 statistical_resources <- function(theme, type = NULL, lang = "tr") {
   validated_type <- validate_statistical_resource_types(type)

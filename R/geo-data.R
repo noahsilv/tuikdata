@@ -51,6 +51,9 @@
 #' )
 #' }
 #'
+#' @seealso
+#' \code{\link{geo_map}} for administrative boundary geometries
+#'
 #' @export
 geo_data <- function(variable_no = NULL,
                      variable_level = NULL,
@@ -58,10 +61,11 @@ geo_data <- function(variable_no = NULL,
                      variable_period = NULL,
                      variable_recnum = NULL) {
   data_params <- list(variable_no, variable_level, variable_source, variable_period, variable_recnum)
-  data_mode <- !all(vapply(data_params, is.null, logical(1)))
+  params_are_null <- purrr::map_lgl(data_params, is.null)
+  data_mode <- !all(params_are_null)
 
   if (data_mode) {
-    if (any(vapply(data_params, is.null, logical(1)))) {
+    if (any(params_are_null)) {
       stop("All parameters (variable_no, variable_level, variable_source, variable_period, variable_recnum) must be provided together for data download.")
     }
     if (!(variable_level %in% c(2, 3, 4))) {
@@ -110,10 +114,10 @@ geo_data <- function(variable_no = NULL,
     dplyr::filter(.data$var_num == variable_no) |>
     dplyr::pull(.data$var_name)
 
-  dates <- if (nchar(geo_json_data$tarihler[1]) == 6) {
-    paste(
-      stringr::str_sub(geo_json_data$tarihler, 1, 4),
-      stringr::str_sub(geo_json_data$tarihler, 5, 6),
+  dates <- if (stringr::str_length(geo_json_data$tarihler[1]) == 6L) {
+    stringr::str_c(
+      stringr::str_sub(geo_json_data$tarihler, 1L, 4L),
+      stringr::str_sub(geo_json_data$tarihler, 5L, 6L),
       sep = "-"
     )
   } else {

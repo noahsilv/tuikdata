@@ -25,8 +25,8 @@ validate_string_single <- function(value, arg_name, allowed_values = NULL) {
 validate_dataflow_id <- function(dataflow_id) {
   validated_dataflow_id <- validate_string_single(dataflow_id, "dataflow_id")
 
-  dataflow_parts <- base::strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
-  if (length(dataflow_parts) != 3 || any(base::nchar(dataflow_parts) == 0)) {
+  dataflow_parts <- strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
+  if (length(dataflow_parts) != 3 || any(nchar(dataflow_parts) == 0)) {
     stop(
       paste(
         "dataflow_id must be a single SDMX identifier with three",
@@ -49,7 +49,7 @@ validate_statistical_lang <- function(lang) {
 #' @keywords internal
 split_dataflow_id <- function(dataflow_id) {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
-  dataflow_parts <- base::strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
+  dataflow_parts <- strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
 
   dataflow_components <- list(
     agency_id = dataflow_parts[[1]],
@@ -105,7 +105,7 @@ build_sdmx_data_url <- function(dataflow_id,
     validated_dataflow_id, "/",
     key,
     "/?",
-    base::paste(query_parts, collapse = "&")
+    paste(query_parts, collapse = "&")
   )
 
   return(data_url)
@@ -136,12 +136,12 @@ read_sdmx_document <- function(file) {
 #' @noRd
 #' @keywords internal
 normalize_sdmx_data <- function(sdmx_document) {
-  sdmx_data_frame <- base::as.data.frame(sdmx_document, stringsAsFactors = FALSE)
+  sdmx_data_frame <- as.data.frame(sdmx_document, stringsAsFactors = FALSE)
   sdmx_tibble <- tibble::as_tibble(sdmx_data_frame)
 
   normalized_tibble <- dplyr::mutate(
     sdmx_tibble,
-    dplyr::across(dplyr::where(base::is.character), stringr::str_trim)
+    dplyr::across(dplyr::where(is.character), stringr::str_trim)
   )
 
   return(normalized_tibble)
@@ -167,16 +167,11 @@ normalize_sdmx_data <- function(sdmx_document) {
 clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
   protected_cols <- c("obsTime", "obsValue")
   candidate_cols <- setdiff(names(sdmx_data), protected_cols)
-  keep_cols <- vapply(
-    candidate_cols,
-    function(column_name) {
-      column_values <- sdmx_data[[column_name]]
-      unique_values <- unique(column_values[!is.na(column_values)])
-
-      return(length(unique_values) > 1)
-    },
-    logical(1)
-  )
+  keep_cols <- purrr::map_lgl(candidate_cols, function(column_name) {
+    column_values <- sdmx_data[[column_name]]
+    unique_values <- unique(column_values[!is.na(column_values)])
+    return(length(unique_values) > 1)
+  })
 
   kept_candidate_cols <- candidate_cols[keep_cols]
   kept_cols <- c(kept_candidate_cols, protected_cols)
@@ -186,34 +181,35 @@ clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
     return(cleaned_long_data)
   }
 
-  long_output <- list()
-
-  for (column_name in kept_candidate_cols) {
-    long_output[[column_name]] <- cleaned_long_data[[column_name]]
-
+  col_pairs <- purrr::map(kept_candidate_cols, function(column_name) {
+    base_pair <- stats::setNames(
+      list(cleaned_long_data[[column_name]]),
+      column_name
+    )
     label_map <- label_maps[[column_name]]
     if (is.null(label_map)) {
-      next
+      return(base_pair)
     }
-
     label_values <- apply_dimension_label_map(
-      cleaned_long_data[[column_name]],
-      column_name,
-      label_maps
+      cleaned_long_data[[column_name]], column_name, label_maps
     )
-
     if (!identical(as.character(label_values), as.character(cleaned_long_data[[column_name]]))) {
-      long_output[[paste0(column_name, "_label")]] <- label_values
+      label_pair <- stats::setNames(
+        list(label_values),
+        paste0(column_name, "_label")
+      )
+      return(c(base_pair, label_pair))
     }
-  }
+    return(base_pair)
+  })
 
-  for (column_name in protected_cols) {
-    if (column_name %in% names(cleaned_long_data)) {
-      long_output[[column_name]] <- cleaned_long_data[[column_name]]
-    }
-  }
+  protected_pairs <- purrr::keep(
+    stats::setNames(as.list(protected_cols), protected_cols),
+    ~ .x %in% names(cleaned_long_data)
+  ) |>
+    purrr::imap(~ cleaned_long_data[[.y]])
 
-  return(tibble::as_tibble(long_output))
+  return(tibble::as_tibble(c(purrr::list_flatten(col_pairs), protected_pairs)))
 }
 
 #' Lookup localized label value from rsdmx language list.
@@ -270,41 +266,35 @@ extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "tr") {
   validated_lang <- validate_statistical_lang(lang)
   sdmx_dimensions <- raw_sdmx@datastructures@datastructures[[1]]@Components@Dimensions
   sdmx_codelists <- raw_sdmx@codelists@codelists
-  codelist_ids <- vapply(sdmx_codelists, function(x) x@id, character(1))
-  label_maps <- list()
+  codelist_ids <- purrr::map_chr(sdmx_codelists, ~ .x@id)
 
-  for (sdmx_dimension in sdmx_dimensions) {
+  dimension_label_maps <- purrr::map(sdmx_dimensions, function(sdmx_dimension) {
     codelist_id <- sdmx_dimension@codelist
     if (is.na(codelist_id) || !nzchar(codelist_id)) {
-      next
+      return(NULL)
     }
-
     codelist_index <- which(codelist_ids == codelist_id)
     if (length(codelist_index) == 0) {
-      next
+      return(NULL)
     }
-
     code_entries <- sdmx_codelists[[codelist_index[[1]]]]@Code
-    code_ids <- vapply(code_entries, function(x) x@id, character(1))
-    code_labels <- vapply(
-      code_entries,
-      function(x) {
-        code_label <- lookup_first_localized_value(x@name, validated_lang)
-        if (is.na(code_label) || !nzchar(code_label)) {
-          code_label <- lookup_first_localized_value(x@label, validated_lang)
-        }
-        if (is.na(code_label) || !nzchar(code_label)) {
-          code_label <- x@id
-        }
-        return(code_label)
-      },
-      character(1)
-    )
+    code_ids <- purrr::map_chr(code_entries, ~ .x@id)
+    code_labels <- purrr::map_chr(code_entries, function(x) {
+      code_label <- lookup_first_localized_value(x@name, validated_lang)
+      if (is.na(code_label) || !nzchar(code_label)) {
+        code_label <- lookup_first_localized_value(x@label, validated_lang)
+      }
+      if (is.na(code_label) || !nzchar(code_label)) {
+        code_label <- x@id
+      }
+      return(code_label)
+    })
+    return(stats::setNames(code_labels, code_ids))
+  }) |>
+    purrr::set_names(purrr::map_chr(sdmx_dimensions, ~ .x@conceptRef)) |>
+    purrr::compact()
 
-    label_maps[[sdmx_dimension@conceptRef]] <- stats::setNames(code_labels, code_ids)
-  }
-
-  return(label_maps)
+  return(dimension_label_maps)
 }
 
 #' Apply dimension label mapping to observation values.
@@ -438,20 +428,17 @@ fetch_theme_tree <- function(lang = "tr") {
 #' @noRd
 #' @keywords internal
 collect_nodes_by_icon <- function(node_list, target_icons) {
-  collected_nodes <- list()
-  for (node in node_list) {
-    if (isTRUE(node[["icon"]] %in% target_icons)) {
-      collected_nodes <- c(collected_nodes, list(node))
-    }
+  purrr::map(node_list, function(node) {
+    matched <- if (isTRUE(node[["icon"]] %in% target_icons)) list(node) else list()
     child_list <- node[["children"]]
-    if (!is.null(child_list) && length(child_list) > 0) {
-      collected_nodes <- c(
-        collected_nodes,
-        collect_nodes_by_icon(child_list, target_icons)
-      )
+    children_matched <- if (!is.null(child_list) && length(child_list) > 0) {
+      collect_nodes_by_icon(child_list, target_icons)
+    } else {
+      list()
     }
-  }
-  return(collected_nodes)
+    return(c(matched, children_matched))
+  }) |>
+    purrr::list_flatten()
 }
 
 #' Normalize portal URLs to absolute form.
@@ -498,7 +485,7 @@ validate_statistical_sdmx_text <- function(value, argument_name) {
 #' @keywords internal
 validate_statistical_sdmx_key <- function(key) {
   validated_key <- validate_statistical_sdmx_text(key, "key")
-  if (!base::nzchar(validated_key)) {
+  if (!nzchar(validated_key)) {
     stop("key must not be empty.", call. = FALSE)
   }
   return(validated_key)
@@ -578,53 +565,15 @@ build_statistical_resource_tibble <- function(theme_node) {
     theme_id = as.character(theme_node[["id"]]),
     resource_name = purrr::map_chr(resource_nodes, "name"),
     resource_type = resource_type_vec,
-    dataflow_id = unname(ifelse(
+    dataflow_id = dplyr::if_else(
       resource_type_vec == "dataflow",
-      vapply(raw_urls, extract_dataflow_id, character(1)),
+      purrr::map_chr(raw_urls, extract_dataflow_id),
       NA_character_
-    )),
-    resource_url = unname(vapply(raw_urls, normalize_statistical_url, character(1)))
+    ),
+    resource_url = purrr::map_chr(raw_urls, normalize_statistical_url)
   )
 
   return(resource_rows)
-}
-
-#' @noRd
-#' @keywords internal
-build_statistical_table_tibble <- function(theme_node) {
-  resource_rows <- build_statistical_resource_tibble(theme_node)
-  table_rows <- dplyr::filter(
-    resource_rows,
-    .data$resource_type %in% c("dataflow", "istab")
-  )
-
-  return(dplyr::transmute(
-    table_rows,
-    theme_name = .data$theme_name,
-    theme_id = .data$theme_id,
-    table_name = .data$resource_name,
-    node_type = .data$resource_type,
-    dataflow_id = .data$dataflow_id,
-    table_url = .data$resource_url
-  ))
-}
-
-#' @noRd
-#' @keywords internal
-build_statistical_database_tibble <- function(theme_node) {
-  resource_rows <- build_statistical_resource_tibble(theme_node)
-  database_rows <- dplyr::filter(
-    resource_rows,
-    .data$resource_type == "database"
-  )
-
-  return(dplyr::transmute(
-    database_rows,
-    theme_name = .data$theme_name,
-    theme_id = .data$theme_id,
-    db_name = .data$resource_name,
-    db_url = .data$resource_url
-  ))
 }
 
 #' Validate and extract theme node from theme tree.

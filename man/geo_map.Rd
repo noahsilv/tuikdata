@@ -47,7 +47,17 @@ in WGS 84 coordinate reference system (EPSG:4326).
 }
 \examples{
 \dontrun{
-geo_map(level = 2)
+# Download NUTS-3 boundaries as sf object
+nuts3_sf <- geo_map(level = 3)
+
+# Drop geometry — return plain tibble for joins
+nuts3_tbl <- geo_map(level = 3, dataframe = TRUE)
+
+# Settlement points (POINT geometry)
+settlements <- geo_map(level = 9)
 }
 
+}
+\seealso{
+\code{\link{geo_data}} for geographic statistical data
 }

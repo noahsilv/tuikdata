@@ -113,13 +113,13 @@ Download Excel files directly from `istab` rows:
 ```{r download}
 population_file_tables <- dplyr::filter(population_tables, node_type == "istab")
 
+xls_path <- tempfile(fileext = ".xls")
 download.file(
   population_file_tables$table_url[1],
-  destfile = "/tmp/tuik_data.xls",
+  destfile = xls_path,
   mode = "wb"
 )
-
-table_data <- readxl::read_xls("/tmp/tuik_data.xls")
+table_data <- readxl::read_xls(xls_path)
 head(table_data)
 ```
 

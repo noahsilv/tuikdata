@@ -84,17 +84,16 @@ clean_data <- read_xls("/tmp/data.xls", skip = 3, n_max = 10)
 ```
 
 ```{r remove_na}
-library(tidyverse)
 clean_data <- read_xls("/tmp/data.xls", skip = 2) |>
-  filter(!is.na(...1)) |>
-  filter(!str_detect(...1, "Kaynak|Source"))
+  dplyr::filter(!is.na(...1)) |>
+  dplyr::filter(!stringr::str_detect(...1, "Kaynak|Source"))
 ```
 
 ```{r clean_names}
 library(janitor)
 clean_data <- read_xls("/tmp/data.xls", skip = 3) |>
-  clean_names() |>
-  rename(year = x1, total = x2)
+  janitor::clean_names() |>
+  dplyr::rename(year = x1, total = x2)
 ```
 
 Inspect files manually before automating:
@@ -107,8 +106,8 @@ View(read_xls("/tmp/data.xls"))
 dim(read_xls("/tmp/data.xls"))
 
 # Inspect specific rows
-read_xls("/tmp/data.xls") |> slice(1:5)
-read_xls("/tmp/data.xls") |> slice((n()-5):n())
+read_xls("/tmp/data.xls") |> dplyr::slice(1:5)
+read_xls("/tmp/data.xls") |> dplyr::slice((dplyr::n()-5):dplyr::n())
 ```
 
 ## Network Dependencies
@@ -176,8 +175,8 @@ Not all variables are available at all NUTS levels. The `geo_data()` function wi
 # Check available levels before downloading
 vars <- geo_data()
 
-var_info <- vars %>%
-  filter(var_num == "TFE-GK105747-O23001")
+var_info <- vars |>
+  dplyr::filter(.data$var_num == "TFE-GK105747-O23001")
 
 # View available levels
 var_info$var_levels[[1]]  # e.g., c(2, 3) - only NUTS-2 and NUTS-3
@@ -199,9 +198,9 @@ Check `var_levels` before downloading:
 download_if_available <- function(var_no, level, ...) {
   vars <- geo_data()
   available_levels <- vars |>
-    filter(var_num == var_no) |>
-    pull(var_levels) |>
-    pluck(1)
+    dplyr::filter(.data$var_num == var_no) |>
+    dplyr::pull(.data$var_levels) |>
+    purrr::pluck(1)
 
   if (level %in% available_levels) {
     geo_data(variable_level = level, variable_no = var_no, ...)
@@ -220,10 +219,16 @@ download_if_available <- function(var_no, level, ...) {
 
 ```{r parse_dates}
 # Annual: "2019" (4 digits), Monthly: "201901" (6 digits)
-data <- geo_data(3, "SNM-GK160951-O33303", "medas", "yillik", 5) |>
-  mutate(
+data <- geo_data(
+  variable_no = "SNM-GK160951-O33303",
+  variable_level = 3,
+  variable_source = "medas",
+  variable_period = "yillik",
+  variable_recnum = 5
+) |>
+  dplyr::mutate(
     year = as.integer(substr(date, 1, 4)),
-    month = if_else(nchar(date) == 6, as.integer(substr(date, 5, 6)), NA_integer_)
+    month = dplyr::if_else(nchar(date) == 6, as.integer(substr(date, 5, 6)), NA_integer_)
   )
 ```
 

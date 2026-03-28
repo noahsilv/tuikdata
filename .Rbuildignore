@@ -20,8 +20,10 @@
 ^\.worktrees/
 ^\.lintr$
 ^CLAUDE\.md$
+^AGENTS\.md$
 ^CITATION\.cff$
 ^CONTRIBUTING\.md$
 ^README_files$
 ^presentation$
 ^presentation/
+^tuikr-implementation-plan\.md$
