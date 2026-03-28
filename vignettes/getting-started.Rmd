@@ -37,7 +37,6 @@ Load the package:
 
 ```{r setup}
 library(tuikr)
-library(tidyverse)
 ```
 
 ## Statistical Data Workflow
@@ -47,114 +46,115 @@ library(tidyverse)
 TUIK organizes data into thematic categories. Start by listing all available themes:
 
 ```{r themes}
-(themes <- statistical_themes())
+(themes <- statistical_themes(lang = "en"))
 ```
 
-Returns a tibble with theme names (Turkish) and IDs.
+Returns a tibble with theme names (English) and IDs.
 
-### Step 2: Find Tables
+### Step 2: Search Tables
 
-Retrieve data tables and SDMX dataflows for a theme:
+For example, theme `"11"` is Population and Demography. Search that theme for
+tables, SDMX dataflows, and direct file downloads:
 
 ```{r tables}
-# Get tables for Justice and Elections (theme 1)
-justice_tables <- statistical_tables("1")
-
-# View the first few tables
-head(justice_tables)
+population_tables <- statistical_tables("11", lang = "en")
+head(population_tables)
 ```
 
 Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive datasets,
 `"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id`,
 which is the canonical machine identifier used by `statistical_data()`.
 
-### Step 3: Discover All Portal Resources
+### Step 3: Find Database URLs
 
-If you want more than tables, use the broader resource catalog:
+Use the same theme ID to retrieve legacy interactive database links:
 
-```{r resources}
-# Get every supported portal resource for the same theme
-justice_resources <- statistical_resources("1")
-
-# Keep only press releases and reports
-justice_publications <- statistical_resources(
-  "1",
-  type = c("press", "report")
-)
+```{r databases}
+population_databases <- statistical_databases("11", lang = "en")
+head(population_databases)
 ```
 
-The function validates input:
+These URLs point to the older Biruni query interface rather than downloadable
+files.
+
+### Step 4: Download SDMX Data
+
+Use the `dataflow_id` values from `statistical_tables()` when you want machine-readable data:
+
+```{r sdmx}
+population_dataflows <- dplyr::filter(population_tables, node_type == "dataflow")
+
+
+population_dataflows |> 
+  dplyr::select(dataflow_id, table_name) |> 
+  dplyr::slice(2)
+
+population_data <- statistical_data(
+  dataflow_id = population_dataflows$dataflow_id[2],
+  start = "2023",
+  end = "2024",
+  lang = "en"
+)
+
+head(population_data)
+```
+
+`statistical_data()` defaults to `key = "ALL"`. Some datasets need a more
+specific SDMX key.
+
+In long output, coded dimensions keep their original machine-readable values
+and gain adjacent `*_label` columns when TUIK exposes human-readable metadata
+for those codes.
+
+### Step 5: Download File Tables
+
+Download Excel files directly from `istab` rows:
+
+```{r download}
+population_file_tables <- dplyr::filter(population_tables, node_type == "istab")
+
+download.file(
+  population_file_tables$table_url[1],
+  destfile = "/tmp/tuik_data.xls",
+  mode = "wb"
+)
+
+table_data <- readxl::read_xls("/tmp/tuik_data.xls")
+head(table_data)
+```
+
+TUIK Excel files often need cleaning because they may contain multiple header
+rows, footer notes, and mixed languages.
+
+### Step 6: Browse Other Portal Resources
+
+Use `statistical_resources()` when you want more than tables and databases:
+
+```{r resources}
+population_resources <- statistical_resources("11", lang = "en")
+head(population_resources)
+
+population_publications <- statistical_resources(
+  "11",
+  type = c("press", "report"),
+  lang = "en"
+)
+head(population_publications)
+```
+
+The theme functions validate input:
 
 ```{r validate, error=TRUE, eval=FALSE}
 # Invalid theme ID
-statistical_tables("aaa")
+statistical_tables("aaa", lang = "en")
 #> Error: You should select a valid theme ID!
 ```
 
 ```{r validate2, error=TRUE, eval=FALSE}
 # Multiple themes not allowed
-statistical_tables(c("1", "2"))
+statistical_tables(c("11", "12"), lang = "en")
 #> Error: You can select only one theme!
 ```
-
-### Step 4: Get Database URLs
-
-Retrieve legacy interactive database URLs:
-
-```{r databases}
-justice_dbs <- statistical_databases("1")
-```
-
-
-## Accessing Data
-
-### SDMX Dataflows
-
-Access SDMX-backed datasets through the exported download helpers:
-
-```{r sdmx}
-# Filter to SDMX dataflows
-dataflows <- dplyr::filter(justice_tables, node_type == "dataflow")
-
-# Download observations
-justice_data <- statistical_data(
-  dataflow_id = dataflows$dataflow_id[1]
-)
-
-# Return the browser's default table layout instead of long observations
-birth_table <- statistical_data(
-  dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
-  layout = "table",
-  lang = "en"
-)
-```
-
-`statistical_data()` uses the same `dataflow_id` and defaults to
-`key = "ALL"`, but some datasets require a more specific SDMX key. Use
-`layout = "table"` when you want the browser's default pivoted table rather
-than the long SDMX observation format.
-
-### File Downloads
-
-Download Excel files directly (`istab` nodes):
-
-```{r download}
-# Filter to file downloads
-file_tables <- dplyr::filter(justice_tables, node_type == "istab")
-
-# Download a specific file
-download.file(
-  file_tables$table_url[1],
-  destfile = "/tmp/tuik_data.xls",
-  mode = "wb"
-)
-
-# Read into R
-library(readxl)
-table_data <- read_xls("/tmp/tuik_data.xls")
-```
-
-TUIK Excel files often need cleaning: multiple headers, footer notes, mixed languages. Use `skip`, `n_max`, and `janitor::clean_names()`.
 
 ## Troubleshooting
 
@@ -165,7 +165,3 @@ Check TUIK portal accessibility. See [Issue #2](https://github.com/emraher/tuikr
 ### Website Structure Changes
 
 TUIK website updates can break scraping. Check for package updates and report issues on [GitHub](https://github.com/emraher/tuikr/issues).
-
-### Excel File Problems
-
-Try `readxl::read_excel()`, use `skip` and `n_max` parameters, or inspect files manually.

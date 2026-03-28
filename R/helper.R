@@ -120,7 +120,7 @@ normalize_sdmx_data <- function(sdmx_document) {
   return(normalized_tibble)
 }
 
-clean_statistical_long_data <- function(sdmx_data) {
+clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
   protected_cols <- c("obsTime", "obsValue")
   candidate_cols <- setdiff(names(sdmx_data), protected_cols)
   keep_cols <- vapply(
@@ -135,64 +135,41 @@ clean_statistical_long_data <- function(sdmx_data) {
   )
 
   kept_candidate_cols <- candidate_cols[keep_cols]
-  kept_cols <- names(sdmx_data)[names(sdmx_data) %in% c(kept_candidate_cols, protected_cols)]
+  kept_cols <- c(kept_candidate_cols, protected_cols)
+  cleaned_long_data <- dplyr::select(sdmx_data, dplyr::all_of(kept_cols))
 
-  return(dplyr::select(sdmx_data, dplyr::all_of(kept_cols)))
-}
+  if (length(kept_candidate_cols) == 0) {
+    return(cleaned_long_data)
+  }
 
-build_databrowser_structure_url <- function(dataflow_id, lang = "tr") {
-  validated_dataflow_id <- validate_dataflow_id(dataflow_id)
-  validated_lang <- validate_statistical_lang(lang)
+  long_output <- list()
 
-  return(paste0(
-    "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
-    validated_dataflow_id,
-    "/structure?locale=",
-    validated_lang
-  ))
-}
+  for (column_name in kept_candidate_cols) {
+    long_output[[column_name]] <- cleaned_long_data[[column_name]]
 
-fetch_databrowser_structure <- function(dataflow_id, lang = "tr") {
-  structure_url <- build_databrowser_structure_url(dataflow_id, lang)
-  http_response <- crul::HttpClient$new(
-    url = structure_url,
-    headers = list(
-      Accept = "application/json, text/plain, */*"
+    label_map <- label_maps[[column_name]]
+    if (is.null(label_map)) {
+      next
+    }
+
+    label_values <- apply_dimension_label_map(
+      cleaned_long_data[[column_name]],
+      column_name,
+      label_maps
     )
-  )$get()
-  http_response$raise_for_status()
 
-  return(jsonlite::fromJSON(
-    http_response$parse("UTF-8"),
-    simplifyVector = FALSE
-  ))
-}
-
-extract_databrowser_table_layout <- function(structure_payload) {
-  layout_payload <- structure_payload$template$layouts
-  parsed_layout <- jsonlite::fromJSON(layout_payload, simplifyVector = FALSE)
-  table_layout <- parsed_layout$tableLayout
-  table_filters <- table_layout$filters
-  table_filter_values <- table_layout$filtersValue
-
-  if (is.null(table_filters)) {
-    table_filters <- character(0)
-  }
-  if (is.null(table_filter_values)) {
-    table_filter_values <- list()
+    if (!identical(as.character(label_values), as.character(cleaned_long_data[[column_name]]))) {
+      long_output[[paste0(column_name, "_label")]] <- label_values
+    }
   }
 
-  table_filters <- unname(unlist(table_filters, use.names = FALSE))
-  if (is.null(table_filters)) {
-    table_filters <- character(0)
+  for (column_name in protected_cols) {
+    if (column_name %in% names(cleaned_long_data)) {
+      long_output[[column_name]] <- cleaned_long_data[[column_name]]
+    }
   }
 
-  return(list(
-    rows = unname(unlist(table_layout$rows, use.names = FALSE)),
-    cols = unname(unlist(table_layout$cols, use.names = FALSE)),
-    filters = table_filters,
-    filters_value = unname(table_filter_values)
-  ))
+  return(tibble::as_tibble(long_output))
 }
 
 lookup_first_localized_value <- function(value, lang) {
@@ -254,14 +231,6 @@ extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "tr") {
   return(label_maps)
 }
 
-normalize_layout_dimension_name <- function(dimension_name, data_names) {
-  if (dimension_name == "TIME_PERIOD" && "obsTime" %in% data_names) {
-    return("obsTime")
-  }
-
-  return(dimension_name)
-}
-
 apply_dimension_label_map <- function(values, dimension_name, label_maps) {
   label_map <- label_maps[[dimension_name]]
   if (is.null(label_map)) {
@@ -273,103 +242,6 @@ apply_dimension_label_map <- function(values, dimension_name, label_maps) {
   mapped_values[missing_labels] <- as.character(values[missing_labels])
 
   return(mapped_values)
-}
-
-build_statistical_data_table <- function(sdmx_data, table_layout, label_maps = list()) {
-  data_names <- names(sdmx_data)
-  row_dims_actual <- unname(vapply(
-    table_layout$rows,
-    normalize_layout_dimension_name,
-    character(1),
-    data_names = data_names
-  ))
-  col_dims_actual <- unname(vapply(
-    table_layout$cols,
-    normalize_layout_dimension_name,
-    character(1),
-    data_names = data_names
-  ))
-  filter_dims_actual <- unname(vapply(
-    names(table_layout$filters_value),
-    normalize_layout_dimension_name,
-    character(1),
-    data_names = data_names
-  ))
-
-  filtered_data <- sdmx_data
-  if (length(filter_dims_actual) > 0) {
-    for (i in seq_along(filter_dims_actual)) {
-      filter_dim <- filter_dims_actual[[i]]
-      filter_value <- table_layout$filters_value[[i]]
-      if (filter_dim %in% names(filtered_data)) {
-        filtered_data <- dplyr::filter(
-          filtered_data,
-          .data[[filter_dim]] == filter_value
-        )
-      }
-    }
-  }
-
-  used_dims_actual <- unique(c(row_dims_actual, col_dims_actual, filter_dims_actual))
-  candidate_dimension_cols <- setdiff(
-    names(filtered_data),
-    c("obsValue", "CONF_STATUS", "UNIT_MEASURE")
-  )
-  extra_dimension_cols <- setdiff(candidate_dimension_cols, used_dims_actual)
-  varying_extra_cols <- extra_dimension_cols[vapply(
-    filtered_data[extra_dimension_cols],
-    function(x) length(unique(x[!is.na(x)])) > 1,
-    logical(1)
-  )]
-
-  if (length(varying_extra_cols) > 0) {
-    stop(
-      "Cannot construct a table layout because multiple unconstrained dimensions remain: ",
-      paste(varying_extra_cols, collapse = ", "),
-      ". Supply a narrower SDMX key or use layout = 'long'.",
-      call. = FALSE
-    )
-  }
-
-  labeled_data <- filtered_data
-  for (dimension_name in unique(c(row_dims_actual, col_dims_actual))) {
-    if (dimension_name %in% names(labeled_data)) {
-      source_dimension_name <- if (dimension_name == "obsTime") {
-        "TIME_PERIOD"
-      } else {
-        dimension_name
-      }
-      labeled_data[[dimension_name]] <- apply_dimension_label_map(
-        labeled_data[[dimension_name]],
-        source_dimension_name,
-        label_maps
-      )
-    }
-  }
-
-  if (length(col_dims_actual) == 0) {
-    return(dplyr::select(labeled_data, dplyr::all_of(c(row_dims_actual, "obsValue"))))
-  }
-
-  wide_table <- tidyr::pivot_wider(
-    labeled_data,
-    id_cols = dplyr::all_of(row_dims_actual),
-    names_from = dplyr::all_of(col_dims_actual),
-    values_from = "obsValue",
-    names_sep = " | "
-  )
-
-  rename_map <- stats::setNames(
-    row_dims_actual,
-    table_layout$rows
-  )
-  rename_map <- rename_map[unname(rename_map) %in% names(wide_table)]
-
-  if (length(rename_map) > 0) {
-    wide_table <- dplyr::rename(wide_table, !!!rename_map)
-  }
-
-  return(wide_table)
 }
 
 build_statistical_portal_request <- function(lang = "tr") {

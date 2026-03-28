@@ -62,14 +62,17 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_false(any(grepl("databrowser2.tuik.gov.tr/api/core/nodes", readme_md_lines, fixed = TRUE)))
 
   first_tables_line <- which(grepl("statistical_tables(", getting_started_lines, fixed = TRUE))[1]
+  first_databases_line <- which(grepl("statistical_databases(", getting_started_lines, fixed = TRUE))[1]
   first_resources_line <- which(grepl("statistical_resources(", getting_started_lines, fixed = TRUE))[1]
-  first_data_line <- which(grepl("justice_data <- statistical_data(", getting_started_lines, fixed = TRUE))[1]
+  first_data_line <- which(grepl("population_data <- statistical_data(", getting_started_lines, fixed = TRUE))[1]
 
   expect_false(is.na(first_tables_line))
+  expect_false(is.na(first_databases_line))
   expect_false(is.na(first_resources_line))
   expect_false(is.na(first_data_line))
-  expect_true(first_tables_line < first_resources_line)
-  expect_true(first_resources_line < first_data_line)
+  expect_true(first_tables_line < first_databases_line)
+  expect_true(first_databases_line < first_data_line)
+  expect_true(first_data_line < first_resources_line)
   expect_false(any(grepl("databrowser2.tuik.gov.tr/api/core/nodes", getting_started_lines, fixed = TRUE)))
 
   expect_true(any(grepl("SDMX Key Complexity", known_issues_lines, fixed = TRUE)))

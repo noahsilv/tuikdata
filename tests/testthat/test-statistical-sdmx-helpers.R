@@ -19,12 +19,6 @@ theme_tree_fixture <- list(
   )
 )
 
-databrowser_structure_fixture <- list(
-  template = list(
-    layouts = '{"tableLayout":{"rows":["TIME_PERIOD"],"cols":["REF_AREA","ANNE_YAS_GRUP"],"filters":[],"filtersValue":{}}}'
-  )
-)
-
 test_that("validate_dataflow_id rejects malformed values", {
   expect_error(
     tuikr:::validate_dataflow_id(1),
@@ -70,30 +64,6 @@ test_that("build_sdmx_data_url returns the TUIK data endpoint", {
   expect_true(grepl("dimensionAtObservation=TIME_PERIOD", data_url, fixed = TRUE))
 })
 
-test_that("build_databrowser_structure_url returns the databrowser structure endpoint", {
-  structure_url <- tuikr:::build_databrowser_structure_url(
-    "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
-    lang = "en"
-  )
-
-  expect_equal(
-    structure_url,
-    paste0(
-      "https://databrowser2.tuik.gov.tr/api/core/nodes/1/datasets/",
-      "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0/structure?locale=en"
-    )
-  )
-})
-
-test_that("extract_databrowser_table_layout parses the stored layout template", {
-  table_layout <- tuikr:::extract_databrowser_table_layout(databrowser_structure_fixture)
-
-  expect_equal(table_layout$rows, "TIME_PERIOD")
-  expect_equal(table_layout$cols, c("REF_AREA", "ANNE_YAS_GRUP"))
-  expect_equal(table_layout$filters, character(0))
-  expect_equal(table_layout$filters_value, list())
-})
-
 test_that("normalize_sdmx_data trims character columns from tabular inputs", {
   tabular_input <- data.frame(
     REF_AREA = c(" TR ", " TR "),
@@ -110,56 +80,38 @@ test_that("normalize_sdmx_data trims character columns from tabular inputs", {
   expect_equal(normalized_data$obsValue, c("174.4", "170.1"))
 })
 
-test_that("build_statistical_data_table pivots long SDMX data into the browser layout", {
+test_that("clean_statistical_long_data adds label columns for coded dimensions", {
   long_data <- tibble::tibble(
-    REF_AREA = c("TR", "TR", "TR", "TR", "34", "34", "34", "34"),
-    ANNE_YAS_GRUP = c("Y15T19", "Y15T19", "Y20T24", "Y20T24", "Y15T19", "Y15T19", "Y20T24", "Y20T24"),
-    obsTime = c("2009", "2010", "2009", "2010", "2009", "2010", "2009", "2010"),
-    obsValue = c(36.97, 33.76, 117.45, 112.84, 24.49, 21.84, 97.47, 93.33)
-  )
-  table_layout <- list(
-    rows = "TIME_PERIOD",
-    cols = c("REF_AREA", "ANNE_YAS_GRUP"),
-    filters = character(0),
-    filters_value = list()
+    ADNKS_GOSTERGE = c("COCUK_BAG_ORAN", "TOP_YAS_BAG_ORAN", "YASLI_BAG_ORAN"),
+    REF_AREA = c("TR", "TR", "TR"),
+    obsTime = c("2023", "2023", "2023"),
+    obsValue = c(31.39, 46.34, 14.95)
   )
   label_maps <- list(
-    REF_AREA = c(TR = "Turkey", `34` = "Istanbul"),
-    ANNE_YAS_GRUP = c(Y15T19 = "15-19", Y20T24 = "20-24")
+    ADNKS_GOSTERGE = c(
+      COCUK_BAG_ORAN = "Child dependency ratio % (0-14 years)",
+      TOP_YAS_BAG_ORAN = "Total age dependency ratio (%)",
+      YASLI_BAG_ORAN = "Elderly dependency ratio % (65+ years)"
+    ),
+    REF_AREA = c(TR = "Turkey")
   )
 
-  wide_table <- tuikr:::build_statistical_data_table(
+  cleaned_long_data <- tuikr:::clean_statistical_long_data(
     long_data,
-    table_layout = table_layout,
     label_maps = label_maps
   )
 
-  expect_s3_class(wide_table, "tbl_df")
   expect_named(
-    wide_table,
-    c("TIME_PERIOD", "Turkey | 15-19", "Turkey | 20-24", "Istanbul | 15-19", "Istanbul | 20-24")
+    cleaned_long_data,
+    c("ADNKS_GOSTERGE", "ADNKS_GOSTERGE_label", "obsTime", "obsValue")
   )
-  expect_equal(wide_table$TIME_PERIOD, c("2009", "2010"))
-  expect_equal(wide_table[["Turkey | 15-19"]], c(36.97, 33.76))
-})
-
-test_that("build_statistical_data_table errors when extra varying dimensions remain", {
-  long_data <- tibble::tibble(
-    REF_AREA = c("TR", "TR"),
-    SEX = c("M", "F"),
-    obsTime = c("2020", "2020"),
-    obsValue = c(1, 2)
-  )
-  table_layout <- list(
-    rows = "TIME_PERIOD",
-    cols = "REF_AREA",
-    filters = character(0),
-    filters_value = list()
-  )
-
-  expect_error(
-    tuikr:::build_statistical_data_table(long_data, table_layout = table_layout),
-    "multiple unconstrained dimensions remain: SEX"
+  expect_equal(
+    cleaned_long_data$ADNKS_GOSTERGE_label,
+    c(
+      "Child dependency ratio % (0-14 years)",
+      "Total age dependency ratio (%)",
+      "Elderly dependency ratio % (65+ years)"
+    )
   )
 })
 

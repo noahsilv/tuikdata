@@ -11,30 +11,20 @@
 #' @param detail Character string. Default \code{"full"}.
 #' @param dimension_at_observation Character string. Default
 #'   \code{"TIME_PERIOD"}.
-#' @param layout Character string. Default \code{"long"} returns the flat SDMX
-#'   observations after dropping invariant columns such as placeholder-only
-#'   dimensions. Use \code{"wide"} to pivot the result using the default
-#'   row and column layout from the TUIK data browser.
-#' @param lang Character string. Language for browser-derived table labels.
-#'   Default \code{"tr"}. Use \code{"en"} for English labels in
-#'   \code{layout = "wide"} mode.
+#' @param lang Character string. Language for human-readable label columns
+#'   derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
+#'   English labels when available.
 #'
 #' @return A tibble. By default, returns long-form SDMX observations with
-#'   trimmed character columns and invariant dimensions removed. In
-#'   \code{layout = "wide"} mode, returns a wide table using the browser's
-#'   default layout.
+#'   trimmed character columns, invariant dimensions removed, and
+#'   \code{*_label} columns added for coded dimensions when labels are
+#'   available.
 #'
 #' @examples
 #' \dontrun{
 #' statistical_data(
 #'   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
 #'   key = "TR....../ALL"
-#' )
-#'
-#' statistical_data(
-#'   dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
-#'   layout = "wide",
-#'   lang = "en"
 #' )
 #' }
 #'
@@ -45,7 +35,6 @@ statistical_data <- function(dataflow_id,
                              end = NULL,
                              detail = "full",
                              dimension_at_observation = "TIME_PERIOD",
-                             layout = "long",
                              lang = "tr") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   validate_statistical_sdmx_key(key)
@@ -53,7 +42,6 @@ statistical_data <- function(dataflow_id,
   validate_statistical_sdmx_optional_text(end, "end")
   validate_statistical_sdmx_text(detail, "detail")
   validate_statistical_sdmx_text(dimension_at_observation, "dimension_at_observation")
-  validated_layout <- match.arg(layout, c("long", "wide"))
   validated_lang <- validate_statistical_lang(lang)
 
   data_url <- build_sdmx_data_url(
@@ -67,27 +55,13 @@ statistical_data <- function(dataflow_id,
 
   sdmx_document <- read_sdmx_document(data_url)
   sdmx_data <- normalize_sdmx_data(sdmx_document)
+  structure_info <- statistical_data_structure(validated_dataflow_id)
+  label_maps <- extract_sdmx_dimension_label_maps(
+    structure_info$raw_sdmx,
+    lang = validated_lang
+  )
 
-  if (validated_layout == "wide") {
-    structure_payload <- fetch_databrowser_structure(
-      validated_dataflow_id,
-      lang = validated_lang
-    )
-    table_layout <- extract_databrowser_table_layout(structure_payload)
-    structure_info <- statistical_data_structure(validated_dataflow_id)
-    label_maps <- extract_sdmx_dimension_label_maps(
-      structure_info$raw_sdmx,
-      lang = validated_lang
-    )
-
-    return(build_statistical_data_table(
-      sdmx_data,
-      table_layout = table_layout,
-      label_maps = label_maps
-    ))
-  }
-
-  return(clean_statistical_long_data(sdmx_data))
+  return(clean_statistical_long_data(sdmx_data, label_maps = label_maps))
 }
 
 # Internal SDMX structure helper used for metadata-aware workflows.

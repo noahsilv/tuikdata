@@ -5,6 +5,51 @@ test_that("statistical_data validates dataflow_id before any network call", {
   )
 })
 
+test_that("statistical_data adds label columns to long output for coded dimensions", {
+  testthat::local_mocked_bindings(
+    read_sdmx_document = function(file) {
+      return(file)
+    },
+    normalize_sdmx_data = function(sdmx_document) {
+      return(tibble::tibble(
+        ADNKS_GOSTERGE = c("COCUK_BAG_ORAN", "TOP_YAS_BAG_ORAN", "YASLI_BAG_ORAN"),
+        obsTime = c("2023", "2023", "2023"),
+        obsValue = c(31.39, 46.34, 14.95)
+      ))
+    },
+    statistical_data_structure = function(dataflow_id,
+                                          detail = "Full",
+                                          references = "Descendants") {
+      return(list(raw_sdmx = list()))
+    },
+    extract_sdmx_dimension_label_maps = function(raw_sdmx, lang = "tr") {
+      return(list(
+        ADNKS_GOSTERGE = c(
+          COCUK_BAG_ORAN = "Child dependency ratio % (0-14 years)",
+          TOP_YAS_BAG_ORAN = "Total age dependency ratio (%)",
+          YASLI_BAG_ORAN = "Elderly dependency ratio % (65+ years)"
+        )
+      ))
+    },
+    .package = "tuikr"
+  )
+
+  long_data <- statistical_data("TR,DF_ADNKS_ORAN,1.0", lang = "en")
+
+  expect_named(
+    long_data,
+    c("ADNKS_GOSTERGE", "ADNKS_GOSTERGE_label", "obsTime", "obsValue")
+  )
+  expect_equal(
+    long_data$ADNKS_GOSTERGE_label,
+    c(
+      "Child dependency ratio % (0-14 years)",
+      "Total age dependency ratio (%)",
+      "Elderly dependency ratio % (65+ years)"
+    )
+  )
+})
+
 test_that("internal structure helper validates dataflow_id before any network call", {
   expect_error(
     tuikr:::statistical_data_structure("bad-id"),
@@ -27,25 +72,6 @@ test_that("statistical_data downloads a TUIK SDMX dataset", {
   expect_s3_class(uhti_data, "tbl_df")
   expect_true(nrow(uhti_data) > 0)
   expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(uhti_data)))
-})
-
-test_that("statistical_data can return the browser's default table layout", {
-  skip_if_not(
-    identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
-    "Set RUN_NETWORK_TESTS=true to run network integration tests."
-  )
-  skip_if_offline()
-
-  birth_table <- statistical_data(
-    dataflow_id = "TR,DF_DOGUM_IL_YASA_OZEL_DOGHIZ,1.0",
-    layout = "table",
-    lang = "en"
-  )
-
-  expect_s3_class(birth_table, "tbl_df")
-  expect_true("TIME_PERIOD" %in% names(birth_table))
-  expect_true(any(grepl("Turkey \\| 15-19", names(birth_table))))
-  expect_true(nrow(birth_table) > 0)
 })
 
 test_that("internal structure helper downloads TUIK SDMX metadata", {
@@ -93,10 +119,6 @@ test_that("statistical_data validates SDMX arguments before URL construction", {
   expect_error(
     statistical_data("TR,DF_UHTI_COGRAFI,1.0", lang = "de"),
     "lang must be one of 'tr' or 'en'"
-  )
-  expect_error(
-    statistical_data("TR,DF_UHTI_COGRAFI,1.0", layout = "matrix"),
-    "'arg' should be one of"
   )
 })
 
