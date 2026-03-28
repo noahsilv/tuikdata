@@ -1,30 +1,60 @@
 #' Download SDMX Data from TUIK
 #'
 #' Downloads a TUIK SDMX dataset identified by `dataflow_id` and returns a
-#' cleaned tibble for analysis.
+#' cleaned tibble ready for analysis. Observations are returned in long form
+#' with trimmed character columns, invariant dimensions dropped, and
+#' human-readable `*_label` columns appended for coded dimensions when SDMX
+#' codelists are available.
 #'
-#' @param dataflow_id Character string. SDMX dataflow identifier from
-#'   \code{\link{statistical_tables}}.
-#' @param key Character string. SDMX key path. Default \code{"ALL"}.
-#' @param start Character string or \code{NULL}. Optional start period.
-#' @param end Character string or \code{NULL}. Optional end period.
-#' @param detail Character string. Default \code{"full"}.
-#' @param dimension_at_observation Character string. Default
-#'   \code{"TIME_PERIOD"}.
-#' @param lang Character string. Language for human-readable label columns
-#'   derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
-#'   English labels when available.
+#' @param dataflow_id Character string. SDMX dataflow identifier in
+#'   `"AGENCY,FLOW_ID,VERSION"` format (e.g., `"TR,DF_UHTI_COGRAFI,1.0"`).
+#'   Obtain valid identifiers from \code{\link{statistical_tables}}.
+#' @param key Character string. SDMX key filter. Default \code{"ALL"} returns
+#'   all series. Use dot-notation to filter dimensions, e.g.,
+#'   \code{"TR....../ALL"} restricts \code{REF_AREA} to Turkey. Refer to the
+#'   SDMX REST API specification for full key syntax.
+#' @param start Character string or \code{NULL}. Optional start period in
+#'   ISO 8601 format (e.g., \code{"2015"}, \code{"2015-Q1"},
+#'   \code{"2015-01"}). Default \code{NULL} returns all available periods.
+#' @param end Character string or \code{NULL}. Optional end period in the same
+#'   format as \code{start}. Default \code{NULL} returns all available periods.
+#' @param detail Character string. Controls how much data the SDMX endpoint
+#'   returns. \code{"full"} (default) includes all attributes and observations.
+#'   Other valid values are \code{"dataonly"}, \code{"serieskeysonly"}, and
+#'   \code{"nodata"}.
+#' @param dimension_at_observation Character string. SDMX
+#'   \code{dimensionAtObservation} parameter. Default \code{"TIME_PERIOD"}
+#'   returns data in time-series orientation. Use \code{"AllDimensions"} for
+#'   flat/cross-sectional layout.
+#' @param lang Character string. Language code for human-readable label columns
+#'   derived from SDMX codelists. Default \code{"tr"} returns Turkish labels
+#'   where available. Use \code{"en"} for English.
 #'
-#' @return A tibble. By default, returns long-form SDMX observations with
-#'   trimmed character columns, invariant dimensions removed, and
-#'   \code{*_label} columns added for coded dimensions when labels are
-#'   available.
+#' @return A tibble in long form. Columns depend on the dataflow's dimension
+#'   structure; invariant dimensions (single unique value) are dropped. For
+#'   each coded dimension with a matching codelist, a companion
+#'   \code{<dim>_label} column is appended immediately after the code column.
+#'   The final two columns are always \code{obsTime} (character, ISO period)
+#'   and \code{obsValue} (character, numeric observation value as returned by
+#'   SDMX).
 #'
 #' @examples
 #' \dontrun{
+#' # All series for the International Services Trade by Country Group dataflow
+#' statistical_data(dataflow_id = "TR,DF_UHTI_COGRAFI,1.0")
+#'
+#' # Restrict to Turkey, with date range
 #' statistical_data(
 #'   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
-#'   key = "TR....../ALL"
+#'   key         = "TR....../ALL",
+#'   start       = "2015",
+#'   end         = "2022"
+#' )
+#'
+#' # English labels
+#' statistical_data(
+#'   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
+#'   lang        = "en"
 #' )
 #' }
 #'
@@ -88,33 +118,4 @@ statistical_data_structure <- function(dataflow_id,
   )
 
   return(structure_info)
-}
-
-validate_statistical_sdmx_text <- function(value, argument_name) {
-  if (!is.character(value) || length(value) != 1 || is.na(value)) {
-    stop(
-      argument_name, " must be a single non-NA character string.",
-      call. = FALSE
-    )
-  }
-
-  return(value)
-}
-
-validate_statistical_sdmx_key <- function(key) {
-  validate_statistical_sdmx_text(key, "key")
-
-  if (!base::nzchar(key)) {
-    stop("key must not be empty.", call. = FALSE)
-  }
-
-  return(key)
-}
-
-validate_statistical_sdmx_optional_text <- function(value, argument_name) {
-  if (is.null(value)) {
-    return(value)
-  }
-
-  validate_statistical_sdmx_text(value, argument_name)
 }

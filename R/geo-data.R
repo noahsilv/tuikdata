@@ -106,7 +106,9 @@ geo_data <- function(variable_no = NULL,
     }
   )
 
-  vals_name <- variable_dt[variable_dt$var_num == variable_no, "var_name", drop = TRUE]
+  vals_name <- variable_dt |>
+    dplyr::filter(.data$var_num == variable_no) |>
+    dplyr::pull(.data$var_name)
 
   dates <- if (nchar(geo_json_data$tarihler[1]) == 6) {
     paste(

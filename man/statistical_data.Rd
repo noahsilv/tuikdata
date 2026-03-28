@@ -15,39 +15,69 @@ statistical_data(
 )
 }
 \arguments{
-\item{dataflow_id}{Character string. SDMX dataflow identifier from
-\code{\link{statistical_tables}}.}
+\item{dataflow_id}{Character string. SDMX dataflow identifier in
+\code{"AGENCY,FLOW_ID,VERSION"} format (e.g., \code{"TR,DF_UHTI_COGRAFI,1.0"}).
+Obtain valid identifiers from \code{\link{statistical_tables}}.}
 
-\item{key}{Character string. SDMX key path. Default \code{"ALL"}.}
+\item{key}{Character string. SDMX key filter. Default \code{"ALL"} returns
+all series. Use dot-notation to filter dimensions, e.g.,
+\code{"TR....../ALL"} restricts \code{REF_AREA} to Turkey. Refer to the
+SDMX REST API specification for full key syntax.}
 
-\item{start}{Character string or \code{NULL}. Optional start period.}
+\item{start}{Character string or \code{NULL}. Optional start period in
+ISO 8601 format (e.g., \code{"2015"}, \code{"2015-Q1"},
+\code{"2015-01"}). Default \code{NULL} returns all available periods.}
 
-\item{end}{Character string or \code{NULL}. Optional end period.}
+\item{end}{Character string or \code{NULL}. Optional end period in the same
+format as \code{start}. Default \code{NULL} returns all available periods.}
 
-\item{detail}{Character string. Default \code{"full"}.}
+\item{detail}{Character string. Controls how much data the SDMX endpoint
+returns. \code{"full"} (default) includes all attributes and observations.
+Other valid values are \code{"dataonly"}, \code{"serieskeysonly"}, and
+\code{"nodata"}.}
 
-\item{dimension_at_observation}{Character string. Default
-\code{"TIME_PERIOD"}.}
+\item{dimension_at_observation}{Character string. SDMX
+\code{dimensionAtObservation} parameter. Default \code{"TIME_PERIOD"}
+returns data in time-series orientation. Use \code{"AllDimensions"} for
+flat/cross-sectional layout.}
 
-\item{lang}{Character string. Language for human-readable label columns
-derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
-English labels when available.}
+\item{lang}{Character string. Language code for human-readable label columns
+derived from SDMX codelists. Default \code{"tr"} returns Turkish labels
+where available. Use \code{"en"} for English.}
 }
 \value{
-A tibble. By default, returns long-form SDMX observations with
-trimmed character columns, invariant dimensions removed, and
-\code{*_label} columns added for coded dimensions when labels are
-available.
+A tibble in long form. Columns depend on the dataflow's dimension
+structure; invariant dimensions (single unique value) are dropped. For
+each coded dimension with a matching codelist, a companion
+\code{<dim>_label} column is appended immediately after the code column.
+The final two columns are always \code{obsTime} (character, ISO period)
+and \code{obsValue} (character, numeric observation value as returned by
+SDMX).
 }
 \description{
 Downloads a TUIK SDMX dataset identified by \code{dataflow_id} and returns a
-cleaned tibble for analysis.
+cleaned tibble ready for analysis. Observations are returned in long form
+with trimmed character columns, invariant dimensions dropped, and
+human-readable \code{*_label} columns appended for coded dimensions when SDMX
+codelists are available.
 }
 \examples{
 \dontrun{
+# All series for the International Services Trade by Country Group dataflow
+statistical_data(dataflow_id = "TR,DF_UHTI_COGRAFI,1.0")
+
+# Restrict to Turkey, with date range
 statistical_data(
   dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
-  key = "TR....../ALL"
+  key         = "TR....../ALL",
+  start       = "2015",
+  end         = "2022"
+)
+
+# English labels
+statistical_data(
+  dataflow_id = "TR,DF_UHTI_COGRAFI,1.0",
+  lang        = "en"
 )
 }
 

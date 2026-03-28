@@ -114,35 +114,3 @@ test_that("build_statistical_resource_tibble maps supported portal resources", {
     )
   )
 })
-
-test_that("build_statistical_table_tibble maps dataflow and file nodes only", {
-  table_rows <- tuikr:::build_statistical_table_tibble(theme_tree_fixture[[1]])
-
-  expect_s3_class(table_rows, "tbl_df")
-  expect_named(
-    table_rows,
-    c("theme_name", "theme_id", "table_name", "node_type", "dataflow_id", "table_url")
-  )
-  expect_equal(table_rows$theme_id, c("1", "1"))
-  expect_equal(table_rows$node_type, c("dataflow", "istab"))
-  expect_equal(table_rows$dataflow_id, c("TR,DF_CRIME,1.0", NA_character_))
-  expect_equal(
-    table_rows$table_url,
-    c(
-      "https://databrowser2.tuik.gov.tr/dataflow/TR,DF_CRIME,1.0",
-      "https://veriportali.tuik.gov.tr/Download/abc123/table.xls"
-    )
-  )
-})
-
-test_that("build_statistical_database_tibble returns database nodes only", {
-  database_rows <- tuikr:::build_statistical_database_tibble(theme_tree_fixture[[1]])
-
-  expect_s3_class(database_rows, "tbl_df")
-  expect_named(database_rows, c("theme_name", "theme_id", "db_name", "db_url"))
-  expect_equal(database_rows$db_name, "Court Database")
-  expect_equal(
-    database_rows$db_url,
-    "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr"
-  )
-})

@@ -24,10 +24,9 @@ depending on the level:
 
 \strong{Levels 2, 3, 4} return MULTIPOLYGON geometries with columns:
 \describe{
-\item{code}{Character. Unique geographic code}
+\item{code}{Character. Unique geographic code (renamed from \code{duzeyKodu})}
 \item{bolgeKodu}{Character. NUTS region code}
 \item{nutsKodu}{Character. NUTS classification code}
-\item{name}{Character. Geographic unit name (often in English)}
 \item{ad}{Character. Geographic unit name in Turkish}
 \item{geometry}{sfc_MULTIPOLYGON. Spatial boundaries (WGS 84)}
 }
