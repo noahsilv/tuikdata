@@ -19,16 +19,19 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`tuikr` provides access to Turkish Statistical Institute (TUIK) data from two portals:
+`tuikr` provides access to Turkish Statistical Institute (TUIK) data from two
+portals:
 
-1. **Main portal** ([veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)): Statistical themes, tables, and databases via a JSON API and SDMX dataflows
-2. **Geographic portal** ([cip.tuik.gov.tr](https://cip.tuik.gov.tr/)): Spatial data and maps
+1. **Main portal** ([veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)):
+   Statistical themes, tables, and databases through SDMX and portal resources
+2. **Geographic portal** ([cip.tuik.gov.tr](https://cip.tuik.gov.tr/)):
+   Spatial data and ready-to-map geometries
 
 ## Installation
 
 Install the development version from GitHub:
 
-```{r install, eval=FALSE}
+```r
 # install.packages("devtools")
 devtools::install_github("emraher/tuikr")
 ```
@@ -43,27 +46,32 @@ library(tuikr)
 
 ### Step 1: Discover Themes
 
-TUIK organizes data into thematic categories. Start by listing all available themes:
+TUIK organizes portal content into theme folders. Start by listing the themes:
 
 ```{r themes}
-(themes <- statistical_themes(lang = "en"))
+themes <- statistical_themes(lang = "en")
+themes
 ```
 
-Returns a tibble with theme names (English) and IDs.
+Theme IDs are character strings. Pass `"11"` rather than `11` so your code
+matches the values returned by `statistical_themes()`.
 
 ### Step 2: Search Tables
 
-For example, theme `"11"` is Population and Demography. Search that theme for
-tables, SDMX dataflows, and direct file downloads:
+Theme `"11"` is Population and Demography. Use it to list SDMX-backed datasets
+and downloadable files:
 
 ```{r tables}
 population_tables <- statistical_tables("11", lang = "en")
 head(population_tables)
 ```
 
-Returns a tibble with `node_type` column: `"dataflow"` for SDMX interactive datasets,
-`"istab"` for direct file downloads. SDMX dataflows include a `dataflow_id`,
-which is the canonical machine identifier used by `statistical_data()`.
+The `node_type` column tells you how to use each row:
+
+- `"dataflow"`: SDMX-backed. Use `statistical_data()` with the `dataflow_id`
+  column.
+- `"istab"`: Direct file download. Use the `table_url` column with
+  `download.file()`.
 
 ### Step 3: Find Database URLs
 
@@ -74,41 +82,30 @@ population_databases <- statistical_databases("11", lang = "en")
 head(population_databases)
 ```
 
-These URLs point to the older Biruni query interface rather than downloadable
-files.
+These URLs point to the legacy Biruni interface. They are browser targets, not
+downloadable files.
 
 ### Step 4: Download SDMX Data
 
-Use the `dataflow_id` values from `statistical_tables()` when you want machine-readable data:
+Filter to SDMX rows, then request one dataflow:
 
 ```{r sdmx}
-population_dataflows <- dplyr::filter(population_tables, node_type == "dataflow")
+pop_flows <- dplyr::filter(population_tables, node_type == "dataflow")
 
-
-population_dataflows |> 
-  dplyr::select(dataflow_id, table_name) |> 
-  dplyr::slice(2)
-
-population_data <- statistical_data(
-  dataflow_id = population_dataflows$dataflow_id[2],
-  start = "2023",
-  end = "2024",
-  lang = "en"
+pop_data <- statistical_data(
+  dataflow_id = pop_flows$dataflow_id[1],
+  start = "2020",
+  end = "2023"
 )
-
-head(population_data)
+dplyr::glimpse(pop_data)
 ```
 
-`statistical_data()` defaults to `key = "ALL"`. Some datasets need a more
-specific SDMX key.
-
-In long output, coded dimensions keep their original machine-readable values
-and gain adjacent `*_label` columns when TUIK exposes human-readable metadata
-for those codes.
+The output is always long format. When TUIK exposes code-list metadata, coded
+dimensions appear beside adjacent `*_label` columns with human-readable labels.
 
 ### Step 5: Download File Tables
 
-Download Excel files directly from `istab` rows:
+Use `istab` rows when you want the portal's downloadable spreadsheets:
 
 ```{r download}
 population_file_tables <- dplyr::filter(population_tables, node_type == "istab")
@@ -119,49 +116,55 @@ download.file(
   destfile = xls_path,
   mode = "wb"
 )
+
 table_data <- readxl::read_xls(xls_path)
 head(table_data)
 ```
 
-TUIK Excel files often need cleaning because they may contain multiple header
-rows, footer notes, and mixed languages.
+TUIK Excel files often have multi-row headers, footer notes, and mixed
+Turkish-English labels. See the Known Issues vignette for cleaning strategies.
 
 ### Step 6: Browse Other Portal Resources
 
-Use `statistical_resources()` when you want more than tables and databases:
+`statistical_resources()` returns the broader portal catalog for a theme:
 
 ```{r resources}
-population_resources <- statistical_resources("11", lang = "en")
-head(population_resources)
-
-population_publications <- statistical_resources(
-  "11",
-  type = c("press", "report"),
-  lang = "en"
-)
-head(population_publications)
+# Returns all portal resources for the theme
+pop_resources <- statistical_resources("11")
+dplyr::count(pop_resources, resource_type)
 ```
 
-The theme functions validate input:
+Use this when you want more than tables and databases and need a single view of
+the theme's portal resources.
 
-```{r validate, error=TRUE, eval=FALSE}
-# Invalid theme ID
+## Validation
+
+The theme helpers validate their inputs before making a request:
+
+```{r validate_invalid_theme, error = TRUE, eval = identical(Sys.getenv("IN_PKGDOWN"), "true")}
 statistical_tables("aaa", lang = "en")
-#> Error: You should select a valid theme ID!
 ```
 
-```{r validate2, error=TRUE, eval=FALSE}
-# Multiple themes not allowed
+```{r validate_multiple_themes, error = TRUE, eval = identical(Sys.getenv("IN_PKGDOWN"), "true")}
 statistical_tables(c("11", "12"), lang = "en")
-#> Error: You can select only one theme!
 ```
 
 ## Troubleshooting
 
 ### Network Issues
 
-Check TUIK portal accessibility. See [Issue #2](https://github.com/emraher/tuikr/issues/2) for known connection problems.
+Check TUIK portal accessibility. See
+[Issue #2](https://github.com/emraher/tuikr/issues/2) for known connection
+problems.
+
+### SDMX Key Errors
+
+If `statistical_data()` errors with a message about unconstrained dimensions,
+supply a narrower SDMX key with the `key` argument. The key uses dot notation,
+for example `key = "A.B.ALL"`.
 
 ### Website Structure Changes
 
-TUIK website updates can break scraping. Check for package updates and report issues on [GitHub](https://github.com/emraher/tuikr/issues).
+TUIK portal updates can break scraping or resource discovery. Check for package
+updates and report issues on
+[GitHub](https://github.com/emraher/tuikr/issues).

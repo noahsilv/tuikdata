@@ -8,128 +8,111 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  eval = build_examples
 )
 ```
 
 ## Introduction
 
-Known issues and workarounds for `tuikr`.
+`tuikr` depends on public TUIK portals. That makes the package useful, but it
+also means a few limitations come from the upstream services rather than the R
+package itself.
 
 ## TUIK Portal Changes
 
 ### The Challenge
 
-TUIK migrated from `data.tuik.gov.tr` (HTML scraping) to `veriportali.tuik.gov.tr` (JSON API + SDMX). The package now uses the JSON API, which is more stable but still subject to breaking changes if TUIK modifies the API response structure.
+TUIK migrated from `data.tuik.gov.tr` to `veriportali.tuik.gov.tr`. The current
+package uses the newer portal, but the response structure can still change
+without notice.
 
-```{r website_change}
-# If the API structure changes, functions will error
-databases <- statistical_databases("1")
-#> Error: Could not parse theme data
+```{r website_change, error = TRUE}
+statistical_databases("1")
 ```
 
 ### Workarounds
 
-Check for package updates, report issues on [GitHub](https://github.com/emraher/tuikr/issues), or use geographic functions (separate stable JSON API).
-
-`statistical_resources()` can still help even when one resource category breaks.
-For example, press releases or reports may remain available as URLs even if a
-specific download pattern changes elsewhere in the portal.
+Check for package updates, report issues on
+[GitHub](https://github.com/emraher/tuikr/issues), and keep in mind that one
+resource category may break while others remain available.
 
 ## Messy Excel Files
 
 ### The Problem
 
-TUIK Excel files have inconsistent formatting: multiple headers, mixed languages, source notes in data area, merged cells.
+TUIK Excel files often contain multi-row headers, merged cells, bilingual
+labels, and source notes mixed into the data area.
 
 ### Example of a Messy File
 
 ```{r messy_example}
-library(readxl)
-library(tuikr)
-
-# Download a file (istab nodes only)
 tables <- statistical_tables("1")
 file_tables <- dplyr::filter(tables, node_type == "istab")
-download.file(file_tables$table_url[1], destfile = "/tmp/data.xls", mode = "wb")
 
-# Read without cleaning
-raw_data <- read_xls("/tmp/data.xls")
-print(raw_data)
+xls_path <- tempfile(fileext = ".xls")
+download.file(file_tables$table_url[1], destfile = xls_path, mode = "wb")
 
-#> # A tibble: 17 × 4
-#>   `Hükümlü ve tutuklu sayısı, 2011-2020` ...2       ...3      ...4
-#>   <chr>                                   <chr>      <chr>     <chr>
-#> 1 Prison population, 2011-2020            <NA>       <NA>      <NA>
-#> 2 Yıllar\nYears                           Toplam\... Erkek\... Kadın\...
-#> 3 <NA>                                    <NA>       <NA>      <NA>
-#> 4 2011                                    128253     123790    4603
-#> ... (data rows)
-#> 14 Kaynak: Ceza İnfaz Kurumu İstatistikleri, 2011-2020  <NA>  <NA>  <NA>
-#> 15 Source: Prison Statistics, 2011-2020    <NA>       <NA>      <NA>
+raw_data <- readxl::read_xls(xls_path)
+dplyr::glimpse(raw_data)
 ```
 
 ### Cleaning Strategies
 
 ```{r skip_rows}
-# Skip the first few rows
-clean_data <- read_xls("/tmp/data.xls", skip = 3)
+clean_data <- readxl::read_xls(xls_path, skip = 3)
+head(clean_data)
 ```
 
 ```{r limit_rows}
-clean_data <- read_xls("/tmp/data.xls", skip = 3, n_max = 10)
+clean_data <- readxl::read_xls(xls_path, skip = 3, n_max = 10)
+clean_data
 ```
 
 ```{r remove_na}
-clean_data <- read_xls("/tmp/data.xls", skip = 2) |>
+clean_data <- readxl::read_xls(xls_path, skip = 2) |>
   dplyr::filter(!is.na(...1)) |>
   dplyr::filter(!stringr::str_detect(...1, "Kaynak|Source"))
+
+head(clean_data)
 ```
 
 ```{r clean_names}
-library(janitor)
-clean_data <- read_xls("/tmp/data.xls", skip = 3) |>
+clean_data <- readxl::read_xls(xls_path, skip = 3) |>
   janitor::clean_names() |>
   dplyr::rename(year = x1, total = x2)
+
+head(clean_data)
 ```
 
-Inspect files manually before automating:
+Inspect a file before you automate the cleaning:
 
 ```{r manual_inspect}
-# View the raw file
-View(read_xls("/tmp/data.xls"))
-
-# Check dimensions
-dim(read_xls("/tmp/data.xls"))
-
-# Inspect specific rows
-read_xls("/tmp/data.xls") |> dplyr::slice(1:5)
-read_xls("/tmp/data.xls") |> dplyr::slice((dplyr::n()-5):dplyr::n())
+dplyr::slice(raw_data, 1:5)
+dplyr::slice(raw_data, (dplyr::n() - 4):dplyr::n())
 ```
 
 ## Network Dependencies
 
 ### Online-Only Functions
 
-All functions require internet connectivity.
+All exported functions call public TUIK services. Offline use is not supported.
 
 ### Handling Connection Failures
 
 ```{r connection_handling}
-library(tuikr)
-
-# Use tryCatch for robust code
 safely_get_themes <- function() {
   tryCatch(
     {
-      statistical_themes()
+      return(statistical_themes())
     },
-    error = function(e) {
-      message("Could not connect to TUIK portal")
-      message("Error: ", e$message)
+    error = function(error_condition) {
+      message("Could not connect to the TUIK portal.")
+      message("Error: ", error_condition$message)
       return(NULL)
     }
   )
@@ -138,87 +121,92 @@ safely_get_themes <- function() {
 themes <- safely_get_themes()
 
 if (is.null(themes)) {
-  stop("Cannot proceed without theme data")
+  stop("Cannot proceed without theme data.")
 }
 ```
-
 
 ## API Limitations
 
 ### Rate Limiting
 
+TUIK does not publish formal rate limits, but slower, sequential requests are
+safer than tight loops.
+
 ```{r rate_limit}
-# Add delays between requests
 theme_ids <- c("1", "2", "3")
-all_tables <- purrr::map_df(theme_ids, function(id) {
-  Sys.sleep(1)  # Wait 1 second between requests
-  statistical_tables(id)
+
+all_tables <- purrr::map_dfr(theme_ids, function(theme_id) {
+  Sys.sleep(1)
+  statistical_tables(theme_id)
 })
 ```
 
 ### SDMX Key Complexity
 
-Some SDMX datasets can be downloaded with the default `key = "ALL"`, but others
-require a dataset-specific key.
+If `statistical_data()` returns an error like
+`"Cannot construct a table layout because multiple unconstrained dimensions remain: obsTime"`,
+the dataset needs a narrower SDMX key. The `key` argument uses dot notation,
+where each dot separates a dimension. Use `"ALL"` for dimensions you do not
+want to filter.
 
-The safest workflow is:
+```r
+# Default -- works for most datasets
+statistical_data(dataflow_id = "DF_TUIK_001")
 
-1. Discover a `dataflow_id` with `statistical_tables()`.
-2. Start with `statistical_data()` and the default `key = "ALL"`.
-3. If the dataset needs a narrower query, adjust the key based on the TUIK SDMX conventions for that dataset.
+# Narrower key -- required for multi-dimensional datasets
+statistical_data(dataflow_id = "DF_TUIK_001", key = "A.B.ALL")
+```
+
+Consult the TUIK SDMX browser at
+[veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/) to inspect the
+dimension structure before you build a custom key.
 
 ### Data Availability by Level
 
-Not all variables are available at all NUTS levels. The `geo_data()` function will error if you request an unavailable level:
-
-```{r level_check}
-# Check available levels before downloading
-vars <- geo_data()
-
-var_info <- vars |>
-  dplyr::filter(.data$var_num == "TFE-GK105747-O23001")
-
-# View available levels
-var_info$var_levels[[1]]  # e.g., c(2, 3) - only NUTS-2 and NUTS-3
-
-# This will fail
-geo_data(
-  variable_level = 4,  # Not available!
-  variable_no = "TFE-GK105747-O23001",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-)
-#> Error: This data is not available at this NUTS level (level = 4)!!!
-```
-
-Check `var_levels` before downloading:
+Not all variables are available at all geographic levels. Check `var_levels`
+before you download:
 
 ```{r check_levels}
-download_if_available <- function(var_no, level, ...) {
-  vars <- geo_data()
-  available_levels <- vars |>
-    dplyr::filter(.data$var_num == var_no) |>
-    dplyr::pull(.data$var_levels) |>
+download_if_available <- function(var_no,
+                                  level,
+                                  variable_source,
+                                  variable_period,
+                                  variable_recnum) {
+  available_levels <- geo_data() |>
+    dplyr::filter(var_num == var_no) |>
+    dplyr::pull(var_levels) |>
     purrr::pluck(1)
 
   if (level %in% available_levels) {
-    geo_data(variable_level = level, variable_no = var_no, ...)
-  } else {
-    message(sprintf("Level %d not available for %s", level, var_no))
-    message(sprintf("Available levels: %s", paste(available_levels, collapse = ", ")))
-    return(NULL)
+    return(
+      geo_data(
+        variable_no = var_no,
+        variable_level = level,
+        variable_source = variable_source,
+        variable_period = variable_period,
+        variable_recnum = variable_recnum
+      )
+    )
   }
+
+  message(sprintf("Level %d not available for %s", level, var_no))
+  message(sprintf("Available levels: %s", paste(available_levels, collapse = ", ")))
+  return(NULL)
 }
 ```
 
+### Wide Layout Removed
+
+`statistical_data()` no longer accepts `layout = "wide"`. All output is long
+format. If you have code that passed `layout = "wide"`, remove that argument.
+The function now always returns long-format data with `*_label` columns
+interleaved next to their coded counterparts.
 
 ## Locale and Date Parsing
 
 ### Geographic Data Dates
 
 ```{r parse_dates}
-# Annual: "2019" (4 digits), Monthly: "201901" (6 digits)
 data <- geo_data(
   variable_no = "SNM-GK160951-O33303",
   variable_level = 3,
@@ -228,36 +216,32 @@ data <- geo_data(
 ) |>
   dplyr::mutate(
     year = as.integer(substr(date, 1, 4)),
-    month = dplyr::if_else(nchar(date) == 6, as.integer(substr(date, 5, 6)), NA_integer_)
+    month = dplyr::if_else(
+      nchar(date) == 6,
+      as.integer(substr(date, 5, 6)),
+      NA_integer_
+    )
   )
 ```
 
 ## GitHub Issue #2
 
-[Issue #2](https://github.com/emraher/tuikr/issues/2) tracks connection problems (timeouts, SSL errors, proxy failures).
-
-## V8 Dependency (Historical)
-
-V8 is now optional (in `Suggests`). Not needed for current functionality:
-
-```{r v8_optional}
-geo_map(3)
-geo_data()
-```
+[Issue #2](https://github.com/emraher/tuikr/issues/2) tracks connection
+problems such as timeouts, SSL errors, and proxy failures.
 
 ## Character Encoding
 
 ```{r encoding}
 Sys.getlocale("LC_CTYPE")
-Sys.setlocale("LC_CTYPE", "en_US.UTF-8")  # Unix/macOS
-Sys.setlocale("LC_CTYPE", "Turkish_Turkey.utf8")  # Windows
+Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+Sys.setlocale("LC_CTYPE", "Turkish_Turkey.utf8")
 ```
 
 ## Performance Considerations
 
 ### Large Downloads
 
-Cache results for reuse:
+Cache large downloads if you plan to reuse them:
 
 ```{r cache}
 cache_file <- "data/district_population.rds"
@@ -265,25 +249,35 @@ cache_file <- "data/district_population.rds"
 if (file.exists(cache_file)) {
   district_data <- readRDS(cache_file)
 } else {
-  district_data <- geo_data(4, "ADNKS-GK137473-O29001", "medas", "yillik", 5)
+  district_data <- geo_data(
+    variable_level = 4,
+    variable_no = "ADNKS-GK137473-O29001",
+    variable_source = "medas",
+    variable_period = "yillik",
+    variable_recnum = 5
+  )
   saveRDS(district_data, cache_file)
 }
 ```
 
 ### Map Files
 
+District geometries are comparatively large. Simplifying them can reduce memory
+use when you only need small-scale maps:
+
 ```{r map_size}
 lau1 <- geo_map(4)
-object.size(lau1) |> format(units = "MB")
+format(object.size(lau1), units = "MB")
 
-library(sf)
-lau1_simple <- st_simplify(lau1, dTolerance = 0.01)
-object.size(lau1_simple) |> format(units = "MB")
+lau1_simple <- sf::st_simplify(lau1, dTolerance = 0.01)
+format(object.size(lau1_simple), units = "MB")
 ```
 
 ## Reporting Issues
 
-Report issues at [github.com/emraher/tuikr/issues](https://github.com/emraher/tuikr/issues) with function call, error message, and `sessionInfo()`.
+Report issues at
+[github.com/emraher/tuikr/issues](https://github.com/emraher/tuikr/issues)
+with the function call, error message, and `sessionInfo()`.
 
 ## Summary
 
@@ -292,7 +286,7 @@ Report issues at [github.com/emraher/tuikr/issues](https://github.com/emraher/tu
 | Website structure changes | High | Update package, report issues |
 | Messy Excel files | Medium | Manual cleaning pipelines |
 | Network dependency | Medium | Error handling, offline tests |
+| SDMX key errors | Medium | Use `key` argument with dot-notation |
 | Level availability | Low | Check metadata first |
 | Rate limiting | Low | Add delays between requests |
 | Turkish locales | Low | Set system locale |
-| V8 dependency | Low (historical) | Now optional, not needed |
