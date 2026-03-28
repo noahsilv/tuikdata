@@ -118,7 +118,7 @@ test_that("statistical_data validates SDMX arguments before URL construction", {
   )
   expect_error(
     statistical_data("TR,DF_UHTI_COGRAFI,1.0", lang = "de"),
-    "lang must be one of 'tr' or 'en'"
+    "lang must be one of:"
   )
 })
 

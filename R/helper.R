@@ -4,19 +4,29 @@
 #' @name helpers
 NULL
 
-validate_dataflow_id <- function(dataflow_id) {
-  if (!is.character(dataflow_id) || length(dataflow_id) != 1 || is.na(dataflow_id)) {
+#' @noRd
+#' @keywords internal
+validate_string_single <- function(value, arg_name, allowed_values = NULL) {
+  if (!is.character(value) || length(value) != 1 || is.na(value)) {
+    stop(arg_name, " must be a single non-NA character string.", call. = FALSE)
+  }
+  if (!is.null(allowed_values) && !(value %in% allowed_values)) {
     stop(
-      paste(
-        "dataflow_id must be a single SDMX identifier like",
-        "'TR,DF_UHTI_COGRAFI,1.0'."
-      ),
+      arg_name, " must be one of: ", paste(allowed_values, collapse = ", "),
+      ".",
       call. = FALSE
     )
   }
+  return(value)
+}
 
-  dataflow_parts <- strsplit(dataflow_id, ",", fixed = TRUE)[[1]]
-  if (length(dataflow_parts) != 3 || any(nchar(dataflow_parts) == 0)) {
+#' @noRd
+#' @keywords internal
+validate_dataflow_id <- function(dataflow_id) {
+  validated_dataflow_id <- validate_string_single(dataflow_id, "dataflow_id")
+
+  dataflow_parts <- base::strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
+  if (length(dataflow_parts) != 3 || any(base::nchar(dataflow_parts) == 0)) {
     stop(
       paste(
         "dataflow_id must be a single SDMX identifier with three",
@@ -26,49 +36,20 @@ validate_dataflow_id <- function(dataflow_id) {
     )
   }
 
-  return(dataflow_id)
+  return(validated_dataflow_id)
 }
 
+#' @noRd
+#' @keywords internal
 validate_statistical_lang <- function(lang) {
-  if (!is.character(lang) || length(lang) != 1 || !(lang %in% c("tr", "en"))) {
-    stop("lang must be one of 'tr' or 'en'.", call. = FALSE)
-  }
-
-  return(lang)
+  return(validate_string_single(lang, "lang", allowed_values = c("tr", "en")))
 }
 
-validate_statistical_sdmx_text <- function(value, argument_name) {
-  if (!is.character(value) || length(value) != 1 || is.na(value)) {
-    stop(
-      argument_name, " must be a single non-NA character string.",
-      call. = FALSE
-    )
-  }
-
-  return(value)
-}
-
-validate_statistical_sdmx_key <- function(key) {
-  validate_statistical_sdmx_text(key, "key")
-
-  if (!nzchar(key)) {
-    stop("key must not be empty.", call. = FALSE)
-  }
-
-  return(key)
-}
-
-validate_statistical_sdmx_optional_text <- function(value, argument_name) {
-  if (is.null(value)) {
-    return(value)
-  }
-
-  validate_statistical_sdmx_text(value, argument_name)
-}
-
+#' @noRd
+#' @keywords internal
 split_dataflow_id <- function(dataflow_id) {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
-  dataflow_parts <- strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
+  dataflow_parts <- base::strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
 
   dataflow_components <- list(
     agency_id = dataflow_parts[[1]],
@@ -79,6 +60,8 @@ split_dataflow_id <- function(dataflow_id) {
   return(dataflow_components)
 }
 
+#' @noRd
+#' @keywords internal
 build_sdmx_structure_url <- function(dataflow_id,
                                      detail = "Full",
                                      references = "Descendants") {
@@ -96,6 +79,8 @@ build_sdmx_structure_url <- function(dataflow_id,
   return(structure_url)
 }
 
+#' @noRd
+#' @keywords internal
 build_sdmx_data_url <- function(dataflow_id,
                                 key = "ALL",
                                 start = NULL,
@@ -120,12 +105,14 @@ build_sdmx_data_url <- function(dataflow_id,
     validated_dataflow_id, "/",
     key,
     "/?",
-    paste(query_parts, collapse = "&")
+    base::paste(query_parts, collapse = "&")
   )
 
   return(data_url)
 }
 
+#' @noRd
+#' @keywords internal
 read_sdmx_document <- function(file) {
   sdmx_document <- rsdmx::readSDMX(
     file = file,
@@ -137,73 +124,111 @@ read_sdmx_document <- function(file) {
   return(sdmx_document)
 }
 
+#' Normalize SDMX data to tibble format with trimmed columns.
+#'
+#' Converts raw rsdmx document output to a cleaned tibble with all
+#' character columns trimmed of leading and trailing whitespace.
+#'
+#' @param sdmx_document SDMX object from \code{rsdmx::readSDMX()}.
+#'
+#' @return A tibble with character columns trimmed.
+#'
+#' @noRd
+#' @keywords internal
 normalize_sdmx_data <- function(sdmx_document) {
-  sdmx_tibble <- tibble::as_tibble(
-    as.data.frame(sdmx_document, stringsAsFactors = FALSE)
+  sdmx_data_frame <- base::as.data.frame(sdmx_document, stringsAsFactors = FALSE)
+  sdmx_tibble <- tibble::as_tibble(sdmx_data_frame)
+
+  normalized_tibble <- dplyr::mutate(
+    sdmx_tibble,
+    dplyr::across(dplyr::where(base::is.character), stringr::str_trim)
   )
 
-  dplyr::mutate(
-    sdmx_tibble,
-    dplyr::across(dplyr::where(is.character), stringr::str_trim)
-  )
+  return(normalized_tibble)
 }
 
+#' Clean SDMX long-form data by removing invariant dimensions and adding labels.
+#'
+#' Removes dimensions that have only a single unique value across all observations
+#' (invariant dimensions). For dimensions with available label maps, adds adjacent
+#' \code{*_label} columns with human-readable labels when they differ from the
+#' original codes.
+#'
+#' @param sdmx_data Tibble of SDMX observations with dimension and observation columns.
+#' @param label_maps List where keys are dimension names and values are named character
+#'   vectors mapping codes to labels. Default empty list.
+#'
+#' @return Tibble with invariant dimensions removed, protected columns (obsTime,
+#'   obsValue) repositioned to the end, and \code{*_label} columns added where
+#'   labels differ from original codes.
+#'
+#' @noRd
+#' @keywords internal
 clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
   protected_cols <- c("obsTime", "obsValue")
   candidate_cols <- setdiff(names(sdmx_data), protected_cols)
-
-  keep_cols <- purrr::map_lgl(
+  keep_cols <- vapply(
     candidate_cols,
-    ~ length(unique(sdmx_data[[.x]][!is.na(sdmx_data[[.x]])])) > 1
+    function(column_name) {
+      column_values <- sdmx_data[[column_name]]
+      unique_values <- unique(column_values[!is.na(column_values)])
+
+      return(length(unique_values) > 1)
+    },
+    logical(1)
   )
 
   kept_candidate_cols <- candidate_cols[keep_cols]
-  kept_cols <- c(kept_candidate_cols, intersect(protected_cols, names(sdmx_data)))
+  kept_cols <- c(kept_candidate_cols, protected_cols)
   cleaned_long_data <- dplyr::select(sdmx_data, dplyr::all_of(kept_cols))
 
   if (length(kept_candidate_cols) == 0) {
     return(cleaned_long_data)
   }
 
-  # Compute optional _label columns for coded dimensions.
-  # A label column is added only when the label map exists and produces values
-  # that differ from the raw codes (i.e., there is something to decode).
-  label_additions <- purrr::imap(
-    cleaned_long_data[kept_candidate_cols],
-    function(col_values, col_name) {
-      if (is.null(label_maps[[col_name]])) return(NULL)
-      label_values <- apply_dimension_label_map(col_values, col_name, label_maps)
-      if (identical(as.character(label_values), as.character(col_values))) return(NULL)
-      label_values
+  long_output <- list()
+
+  for (column_name in kept_candidate_cols) {
+    long_output[[column_name]] <- cleaned_long_data[[column_name]]
+
+    label_map <- label_maps[[column_name]]
+    if (is.null(label_map)) {
+      next
     }
-  ) |>
-    purrr::compact()
 
-  names(label_additions) <- paste0(names(label_additions), "_label")
+    label_values <- apply_dimension_label_map(
+      cleaned_long_data[[column_name]],
+      column_name,
+      label_maps
+    )
 
-  # Interleave each code column with its label counterpart (if any), then
-  # append the protected observation columns.
-  output_cols <- purrr::map(kept_candidate_cols, function(col_name) {
-    col_list <- stats::setNames(list(cleaned_long_data[[col_name]]), col_name)
-    label_col_name <- paste0(col_name, "_label")
-    if (label_col_name %in% names(label_additions)) {
-      col_list[[label_col_name]] <- label_additions[[label_col_name]]
+    if (!identical(as.character(label_values), as.character(cleaned_long_data[[column_name]]))) {
+      long_output[[paste0(column_name, "_label")]] <- label_values
     }
-    col_list
-  }) |>
-    purrr::flatten()
+  }
 
-  protected_out <- purrr::set_names(
-    purrr::map(
-      intersect(protected_cols, names(cleaned_long_data)),
-      ~ cleaned_long_data[[.x]]
-    ),
-    intersect(protected_cols, names(cleaned_long_data))
-  )
+  for (column_name in protected_cols) {
+    if (column_name %in% names(cleaned_long_data)) {
+      long_output[[column_name]] <- cleaned_long_data[[column_name]]
+    }
+  }
 
-  tibble::as_tibble(c(output_cols, protected_out))
+  return(tibble::as_tibble(long_output))
 }
 
+#' Lookup localized label value from rsdmx language list.
+#'
+#' Attempts to extract a localized label from an rsdmx language list, following
+#' a preference order: target language, then first available value, then NA.
+#' Used internally to resolve SDMX dimension code descriptions.
+#'
+#' @param value List from rsdmx structure (language-keyed).
+#' @param lang Language code ("tr" or "en").
+#'
+#' @return Character string of the label, or NA_character_ if unavailable.
+#'
+#' @noRd
+#' @keywords internal
 lookup_first_localized_value <- function(value, lang) {
   if (!is.list(value) || length(value) == 0) {
     return(NA_character_)
@@ -222,42 +247,79 @@ lookup_first_localized_value <- function(value, lang) {
   return(as.character(flattened_values[[1]]))
 }
 
+#' Extract dimension code-to-label mappings from SDMX structure.
+#'
+#' Navigates the rsdmx S4 object structure to extract human-readable labels for
+#' coded dimensions. Used internally to enhance SDMX observations with
+#' \code{*_label} columns. Kept internal to avoid exposing unstable metadata
+#' structure to public API.
+#'
+#' @param raw_sdmx SDMX structure object from \code{rsdmx::readSDMX()}.
+#' @param lang Language code for label extraction ("tr" or "en").
+#'
+#' @return List where keys are dimension concept references and values are
+#'   named character vectors mapping codes to labels.
+#'
+#' @details
+#' Navigates rsdmx S4 structure using datastructures and codelists slots
+#' to extract dimension-to-codelist mappings and code labels.
+#'
+#' @noRd
+#' @keywords internal
 extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "tr") {
   validated_lang <- validate_statistical_lang(lang)
   sdmx_dimensions <- raw_sdmx@datastructures@datastructures[[1]]@Components@Dimensions
   sdmx_codelists <- raw_sdmx@codelists@codelists
-  codelist_ids <- purrr::map_chr(sdmx_codelists, ~ .x@id)
+  codelist_ids <- vapply(sdmx_codelists, function(x) x@id, character(1))
+  label_maps <- list()
 
-  resolve_code_label <- function(x) {
-    code_label <- lookup_first_localized_value(x@name, validated_lang)
-    if (is.na(code_label) || !nzchar(code_label)) {
-      code_label <- lookup_first_localized_value(x@label, validated_lang)
+  for (sdmx_dimension in sdmx_dimensions) {
+    codelist_id <- sdmx_dimension@codelist
+    if (is.na(codelist_id) || !nzchar(codelist_id)) {
+      next
     }
-    if (is.na(code_label) || !nzchar(code_label)) {
-      code_label <- x@id
-    }
-    code_label
-  }
-
-  label_maps <- purrr::map(sdmx_dimensions, function(dim) {
-    codelist_id <- dim@codelist
-    if (is.na(codelist_id) || !nzchar(codelist_id)) return(NULL)
 
     codelist_index <- which(codelist_ids == codelist_id)
-    if (length(codelist_index) == 0) return(NULL)
+    if (length(codelist_index) == 0) {
+      next
+    }
 
     code_entries <- sdmx_codelists[[codelist_index[[1]]]]@Code
-    code_ids <- purrr::map_chr(code_entries, ~ .x@id)
-    code_labels <- purrr::map_chr(code_entries, resolve_code_label)
+    code_ids <- vapply(code_entries, function(x) x@id, character(1))
+    code_labels <- vapply(
+      code_entries,
+      function(x) {
+        code_label <- lookup_first_localized_value(x@name, validated_lang)
+        if (is.na(code_label) || !nzchar(code_label)) {
+          code_label <- lookup_first_localized_value(x@label, validated_lang)
+        }
+        if (is.na(code_label) || !nzchar(code_label)) {
+          code_label <- x@id
+        }
+        return(code_label)
+      },
+      character(1)
+    )
 
-    stats::setNames(code_labels, code_ids)
-  }) |>
-    purrr::set_names(purrr::map_chr(sdmx_dimensions, ~ .x@conceptRef)) |>
-    purrr::compact()
+    label_maps[[sdmx_dimension@conceptRef]] <- stats::setNames(code_labels, code_ids)
+  }
 
-  label_maps
+  return(label_maps)
 }
 
+#' Apply dimension label mapping to observation values.
+#'
+#' Maps coded dimension values to human-readable labels using a label map,
+#' preserving unmapped values as strings.
+#'
+#' @param values Character vector of dimension codes.
+#' @param dimension_name Character string. Dimension name to look up in label_maps.
+#' @param label_maps List of label maps (from \code{extract_sdmx_dimension_label_maps()}).
+#'
+#' @return Character vector with mapped labels where available, original values otherwise.
+#'
+#' @noRd
+#' @keywords internal
 apply_dimension_label_map <- function(values, dimension_name, label_maps) {
   label_map <- label_maps[[dimension_name]]
   if (is.null(label_map)) {
@@ -271,6 +333,8 @@ apply_dimension_label_map <- function(values, dimension_name, label_maps) {
   return(mapped_values)
 }
 
+#' @noRd
+#' @keywords internal
 build_statistical_portal_request <- function(lang = "tr") {
   validated_lang <- validate_statistical_lang(lang)
 
@@ -301,6 +365,18 @@ build_statistical_portal_request <- function(lang = "tr") {
   return(request_info)
 }
 
+#' Fetch theme tree from TUIK statistical portal API.
+#'
+#' Makes authenticated request to the TUIK veriportali API to retrieve
+#' the full hierarchical theme structure. Uses cookie-based session handling
+#' to access portal resources.
+#'
+#' @param lang Language code ("tr" or "en").
+#'
+#' @return List representing the JSON theme tree structure.
+#'
+#' @noRd
+#' @keywords internal
 fetch_theme_tree <- function(lang = "tr") {
   request_info <- build_statistical_portal_request(lang)
 
@@ -346,6 +422,21 @@ fetch_theme_tree <- function(lang = "tr") {
   return(parsed_json$data)
 }
 
+#' Recursively collect theme nodes by icon type.
+#'
+#' Traverses a hierarchical theme tree structure to find all nodes matching
+#' one of the target icon types. Used to extract resource nodes from the
+#' TUIK theme tree.
+#'
+#' @param node_list List of nodes from theme tree, each with optional \code{icon}
+#'   and \code{children} fields.
+#' @param target_icons Character vector of icon types to match (e.g.,
+#'   \code{c("dataflow", "database")}).
+#'
+#' @return List of nodes matching the target icons (flattened from tree structure).
+#'
+#' @noRd
+#' @keywords internal
 collect_nodes_by_icon <- function(node_list, target_icons) {
   collected_nodes <- list()
   for (node in node_list) {
@@ -363,6 +454,17 @@ collect_nodes_by_icon <- function(node_list, target_icons) {
   return(collected_nodes)
 }
 
+#' Normalize portal URLs to absolute form.
+#'
+#' Prepends the TUIK portal base URL to relative paths, passes through
+#' absolute URLs unchanged.
+#'
+#' @param raw_url Character string. URL from portal JSON (may be relative).
+#'
+#' @return Character string. Absolute TUIK portal URL.
+#'
+#' @noRd
+#' @keywords internal
 normalize_statistical_url <- function(raw_url) {
   if (grepl("^https?://", raw_url)) {
     return(raw_url)
@@ -371,10 +473,48 @@ normalize_statistical_url <- function(raw_url) {
   return(paste0("https://veriportali.tuik.gov.tr", raw_url))
 }
 
+#' Extract SDMX dataflow ID from databrowser URL.
+#'
+#' Extracts the dataflow identifier (last path component) from a
+#' TUIK databrowser URL.
+#'
+#' @param raw_url Character string. TUIK databrowser URL.
+#'
+#' @return Character string. SDMX dataflow ID (e.g., "TR,DF_CRIME,1.0").
+#'
+#' @noRd
+#' @keywords internal
 extract_dataflow_id <- function(raw_url) {
   return(stringr::str_extract(raw_url, "[^/]+$"))
 }
 
+#' @noRd
+#' @keywords internal
+validate_statistical_sdmx_text <- function(value, argument_name) {
+  return(validate_string_single(value, argument_name))
+}
+
+#' @noRd
+#' @keywords internal
+validate_statistical_sdmx_key <- function(key) {
+  validated_key <- validate_statistical_sdmx_text(key, "key")
+  if (!base::nzchar(validated_key)) {
+    stop("key must not be empty.", call. = FALSE)
+  }
+  return(validated_key)
+}
+
+#' @noRd
+#' @keywords internal
+validate_statistical_sdmx_optional_text <- function(value, argument_name) {
+  if (is.null(value)) {
+    return(value)
+  }
+  return(validate_statistical_sdmx_text(value, argument_name))
+}
+
+#' @noRd
+#' @keywords internal
 validate_statistical_resource_types <- function(type) {
   valid_types <- c("press", "database", "istab", "dataflow", "report")
 
@@ -399,6 +539,20 @@ validate_statistical_resource_types <- function(type) {
   return(unique(type))
 }
 
+#' Build resource tibble from theme node.
+#'
+#' Extracts all resource nodes (dataflows, databases, files, press releases,
+#' reports) from a theme tree node and returns a structured tibble mapping
+#' resource metadata.
+#'
+#' @param theme_node List from theme tree with \code{id}, \code{name}, and
+#'   \code{children} fields.
+#'
+#' @return Tibble with 6 columns: theme_name, theme_id, resource_name,
+#'   resource_type, dataflow_id (for dataflow resources), resource_url.
+#'
+#' @noRd
+#' @keywords internal
 build_statistical_resource_tibble <- function(theme_node) {
   resource_nodes <- collect_nodes_by_icon(
     theme_node[["children"]],
@@ -419,20 +573,72 @@ build_statistical_resource_tibble <- function(theme_node) {
   resource_type_vec <- purrr::map_chr(resource_nodes, "icon")
   raw_urls <- purrr::map_chr(resource_nodes, "url")
 
-  tibble::tibble(
+  resource_rows <- tibble::tibble(
     theme_name = theme_node[["name"]],
     theme_id = as.character(theme_node[["id"]]),
     resource_name = purrr::map_chr(resource_nodes, "name"),
     resource_type = resource_type_vec,
-    dataflow_id = ifelse(
+    dataflow_id = unname(ifelse(
       resource_type_vec == "dataflow",
-      purrr::map_chr(raw_urls, extract_dataflow_id),
+      vapply(raw_urls, extract_dataflow_id, character(1)),
       NA_character_
-    ),
-    resource_url = purrr::map_chr(raw_urls, normalize_statistical_url)
+    )),
+    resource_url = unname(vapply(raw_urls, normalize_statistical_url, character(1)))
   )
+
+  return(resource_rows)
 }
 
+#' @noRd
+#' @keywords internal
+build_statistical_table_tibble <- function(theme_node) {
+  resource_rows <- build_statistical_resource_tibble(theme_node)
+  table_rows <- dplyr::filter(
+    resource_rows,
+    .data$resource_type %in% c("dataflow", "istab")
+  )
+
+  return(dplyr::transmute(
+    table_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    table_name = .data$resource_name,
+    node_type = .data$resource_type,
+    dataflow_id = .data$dataflow_id,
+    table_url = .data$resource_url
+  ))
+}
+
+#' @noRd
+#' @keywords internal
+build_statistical_database_tibble <- function(theme_node) {
+  resource_rows <- build_statistical_resource_tibble(theme_node)
+  database_rows <- dplyr::filter(
+    resource_rows,
+    .data$resource_type == "database"
+  )
+
+  return(dplyr::transmute(
+    database_rows,
+    theme_name = .data$theme_name,
+    theme_id = .data$theme_id,
+    db_name = .data$resource_name,
+    db_url = .data$resource_url
+  ))
+}
+
+#' Validate and extract theme node from theme tree.
+#'
+#' Checks that the theme argument is a single valid ID and returns the
+#' corresponding theme node. Displays available themes if validation fails.
+#'
+#' @param theme Numeric or character. Theme ID to validate.
+#' @param theme_tree List from \code{fetch_theme_tree()}.
+#'
+#' @return List representing the theme node.
+#'
+#' @noRd
+#' @keywords internal
 validate_theme <- function(theme, theme_tree) {
   theme_id_chr <- as.character(theme)
   top_level_ids <- purrr::map_chr(theme_tree, ~ as.character(.x[["id"]]))

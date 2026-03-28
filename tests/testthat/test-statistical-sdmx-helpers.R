@@ -1,11 +1,32 @@
+theme_tree_fixture <- list(
+  list(
+    id = 17,
+    name = "International Services Trade",
+    children = list(
+      list(
+        id = "DF_UHTI_COGRAFI",
+        name = "International Services Trade by Country Group",
+        icon = "dataflow",
+        url = "https://databrowser2.tuik.gov.tr/#/tr/tuik/categories/17/17_1/17_1_1/TR,DF_UHTI_COGRAFI,1.0"
+      ),
+      list(
+        id = "DB_UHTI_COGRAFI",
+        name = "Legacy database",
+        icon = "database",
+        url = "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr"
+      )
+    )
+  )
+)
+
 test_that("validate_dataflow_id rejects malformed values", {
   expect_error(
     tuikr:::validate_dataflow_id(1),
-    "dataflow_id must be a single SDMX identifier"
+    "dataflow_id must be a single non-NA character string"
   )
   expect_error(
     tuikr:::validate_dataflow_id("bad-id"),
-    "dataflow_id must be a single SDMX identifier"
+    "dataflow_id must be a single SDMX identifier with three"
   )
 })
 
@@ -111,4 +132,14 @@ test_that("normalize_sdmx_data handles a live rsdmx document", {
   expect_s3_class(normalized_data, "tbl_df")
   expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(normalized_data)))
   expect_true(nrow(normalized_data) > 0)
+})
+
+test_that("build helpers derive rows from the theme tree", {
+  table_rows <- tuikr:::build_statistical_table_tibble(theme_tree_fixture[[1]])
+  database_rows <- tuikr:::build_statistical_database_tibble(theme_tree_fixture[[1]])
+
+  expect_equal(table_rows$theme_id, "17")
+  expect_equal(table_rows$node_type, "dataflow")
+  expect_true(grepl("^https://databrowser2\\.tuik\\.gov\\.tr/#/tr/tuik/categories/", table_rows$table_url))
+  expect_equal(database_rows$db_url, "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr")
 })
