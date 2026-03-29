@@ -1,0 +1,191 @@
+---
+title: "Downloading Statistical Data with tuikr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Downloading Statistical Data with tuikr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = build_examples,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+## Introduction
+
+`tuikr` exposes two statistical download paths from the TUIK portal:
+
+- `dataflow` rows point to SDMX datasets that work with `tuikr::statistical_data()`
+- `istab` rows point to spreadsheet downloads served by the portal
+
+This vignette walks through one theme, downloads one SDMX series, and then
+downloads one spreadsheet file with the same browser-style session that the
+portal expects.
+
+## Discover a Theme
+
+Start with the theme catalog and locate the Population and Demography folder:
+
+```{r themes}
+theme_catalog <- tuikr::statistical_themes(lang = "en")
+
+theme_catalog |>
+  dplyr::filter(theme_id == "11")
+```
+
+## Inspect Table Nodes
+
+`tuikr::statistical_tables()` returns both SDMX dataflows and spreadsheet
+downloads for the same theme. The `node_type` column tells you which path you
+are looking at.
+
+```{r tables}
+population_tables <- tuikr::statistical_tables("11", lang = "en")
+
+population_tables |>
+  dplyr::count(node_type)
+```
+
+```{r table-preview}
+population_tables |>
+  dplyr::select(table_name, node_type, dataflow_id, table_url) |>
+  dplyr::slice_head(n = 6)
+```
+
+## Check Legacy Database Links
+
+The legacy database URLs are still useful for manual browsing, even though they
+are not the main programmatic download path.
+
+```{r databases}
+population_databases <- tuikr::statistical_databases("11", lang = "en")
+
+population_databases |>
+  dplyr::select(db_name, db_url) |>
+  dplyr::slice_head(n = 3)
+```
+
+## Download an SDMX Dataset
+
+Use the `dataflow_id` to request observations directly from the SDMX endpoint.
+This chunk discovers the current flow ID for the "Age dependency ratio" table
+before it calls `tuikr::statistical_data()`.
+
+```{r sdmx-download}
+age_dependency_flow <- population_tables |>
+  dplyr::filter(
+    node_type == "dataflow",
+    table_name == "Age dependency ratio"
+  ) |>
+  dplyr::slice_head(n = 1)
+
+population_data <- tuikr::statistical_data(
+  dataflow_id = age_dependency_flow$dataflow_id[[1]],
+  start = "2020",
+  end = "2023",
+  lang = "en"
+)
+
+population_data
+```
+
+`tuikr::statistical_data()` always returns long-format output. When TUIK
+publishes code-list labels, the package adds adjacent `*_label` columns so you
+can work with readable values without losing the original codes.
+
+## Download a Spreadsheet Table
+
+The spreadsheet endpoint rejects a cold scripted request. Reuse the portal
+session with `crul::HttpClient` so the download works during the pkgdown build.
+
+```{r spreadsheet-download}
+browser_headers <- list(
+  Accept = "application/json, text/plain, */*",
+  `Accept-Language` = "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7",
+  `User-Agent` = paste(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "AppleWebKit/537.36 (KHTML, like Gecko)",
+    "Chrome/122.0.0.0 Safari/537.36"
+  )
+)
+
+portal_url <- "https://veriportali.tuik.gov.tr/en/statistical-themes"
+cookie_store <- tempfile(fileext = ".txt")
+request_opts <- list(cookiefile = cookie_store, cookiejar = cookie_store)
+
+landing_client <- crul::HttpClient$new(
+  url = portal_url,
+  headers = browser_headers,
+  opts = request_opts
+)
+
+landing_client$get()$raise_for_status()
+
+population_file_tables <- population_tables |>
+  dplyr::filter(node_type == "istab")
+
+spreadsheet_client <- crul::HttpClient$new(
+  url = population_file_tables$table_url[[1]],
+  headers = c(
+    browser_headers,
+    list(
+      Referer = portal_url,
+      Origin = "https://veriportali.tuik.gov.tr"
+    )
+  ),
+  opts = request_opts
+)
+
+spreadsheet_response <- spreadsheet_client$get()
+spreadsheet_response$raise_for_status()
+
+spreadsheet_path <- file.path(tempdir(), "tuikr-population-download")
+writeBin(spreadsheet_response$content, spreadsheet_path)
+
+spreadsheet_format <- readxl::excel_format(spreadsheet_path)
+spreadsheet_format
+
+spreadsheet_preview <- readxl::read_excel(
+  spreadsheet_path,
+  n_max = 10,
+  col_names = FALSE
+)
+
+spreadsheet_preview
+```
+
+The preview is intentionally raw. `istab` files often arrive with stacked
+headers, mixed labels, and source notes inside the worksheet.
+
+## Inspect the Full Resource Catalog
+
+Use `tuikr::statistical_resources()` when you want one table of all supported
+resource types for a theme.
+
+```{r resources}
+population_resources <- tuikr::statistical_resources("11", lang = "en")
+
+population_resources |>
+  dplyr::count(resource_type)
+```
+
+## Troubleshooting
+
+If an SDMX request complains about unconstrained dimensions, supply a narrower
+`key` such as `key = "A.B.ALL"` to pin down the remaining dimensions.
+
+If a spreadsheet download fails, keep the `table_url` but recreate the portal
+session first. The file endpoint expects the same cookie-backed browser session
+that the statistical portal uses for navigation.
+
+If a workbook looks messy in `readxl`, treat that as upstream structure rather
+than a parsing bug. `col_names = FALSE`, `skip`, and `janitor::clean_names()`
+are the usual cleanup tools once you decide which rows hold the real table.

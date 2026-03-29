@@ -2,7 +2,7 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   readme_rmd_path <- testthat::test_path("../../README.Rmd")
   readme_md_path <- testthat::test_path("../../README.md")
   getting_started_path <- testthat::test_path("../../vignettes/getting-started.Rmd")
-  known_issues_path <- testthat::test_path("../../vignettes/known-issues.Rmd")
+  geographic_mapping_path <- testthat::test_path("../../vignettes/geographic-mapping.Rmd")
   resources_r_path <- testthat::test_path("../../R/statistical-resources.R")
   tables_r_path <- testthat::test_path("../../R/statistical-tables.R")
   databases_r_path <- testthat::test_path("../../R/statistical-databases.R")
@@ -16,8 +16,6 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
     all(file.exists(
       readme_rmd_path,
       readme_md_path,
-      getting_started_path,
-      known_issues_path,
       resources_r_path,
       tables_r_path,
       databases_r_path,
@@ -32,8 +30,12 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
 
   readme_rmd_lines <- readLines(readme_rmd_path, warn = FALSE)
   readme_md_lines <- readLines(readme_md_path, warn = FALSE)
+
+  expect_true(file.exists(getting_started_path))
+  expect_true(file.exists(geographic_mapping_path))
+
   getting_started_lines <- readLines(getting_started_path, warn = FALSE)
-  known_issues_lines <- readLines(known_issues_path, warn = FALSE)
+  geographic_mapping_lines <- readLines(geographic_mapping_path, warn = FALSE)
   resources_r_lines <- readLines(resources_r_path, warn = FALSE)
   tables_r_lines <- readLines(tables_r_path, warn = FALSE)
   databases_r_lines <- readLines(databases_r_path, warn = FALSE)
@@ -47,6 +49,9 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(any(grepl("table_url", readme_rmd_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources(", readme_rmd_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", readme_rmd_lines, fixed = TRUE)))
+  expect_true(any(grepl("vignettes/getting-started.Rmd", readme_rmd_lines, fixed = TRUE)))
+  expect_true(any(grepl("vignettes/geographic-mapping.Rmd", readme_rmd_lines, fixed = TRUE)))
+  expect_false(any(grepl("vignettes/known-issues.Rmd", readme_rmd_lines, fixed = TRUE)))
   expect_false(any(grepl("datafile_url", readme_rmd_lines, fixed = TRUE)))
   expect_false(any(grepl("statistical_tables\\(110\\)", readme_rmd_lines)))
   expect_false(any(grepl("nsiws.tuik.gov.tr/rest/data", readme_rmd_lines, fixed = TRUE)))
@@ -56,6 +61,9 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(any(grepl("table_url", readme_md_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources(", readme_md_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data(", readme_md_lines, fixed = TRUE)))
+  expect_true(any(grepl("vignettes/getting-started.Rmd", readme_md_lines, fixed = TRUE)))
+  expect_true(any(grepl("vignettes/geographic-mapping.Rmd", readme_md_lines, fixed = TRUE)))
+  expect_false(any(grepl("vignettes/known-issues.Rmd", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("data_name", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("datafile_url", readme_md_lines, fixed = TRUE)))
   expect_false(any(grepl("nsiws.tuik.gov.tr/rest/data", readme_md_lines, fixed = TRUE)))
@@ -64,7 +72,7 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   first_tables_line <- which(grepl("statistical_tables(", getting_started_lines, fixed = TRUE))[1]
   first_databases_line <- which(grepl("statistical_databases(", getting_started_lines, fixed = TRUE))[1]
   first_resources_line <- which(grepl("statistical_resources(", getting_started_lines, fixed = TRUE))[1]
-  first_data_line <- which(grepl("population_data <- statistical_data(", getting_started_lines, fixed = TRUE))[1]
+  first_data_line <- which(grepl("population_data <- tuikr::statistical_data(", getting_started_lines, fixed = TRUE))[1]
 
   expect_false(is.na(first_tables_line))
   expect_false(is.na(first_databases_line))
@@ -75,9 +83,11 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(first_data_line < first_resources_line)
   expect_false(any(grepl("databrowser2.tuik.gov.tr/api/core/nodes", getting_started_lines, fixed = TRUE)))
 
-  expect_true(any(grepl("SDMX Key Complexity", known_issues_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_resources()", known_issues_lines, fixed = TRUE)))
-  expect_true(any(grepl("statistical_data(", known_issues_lines, fixed = TRUE)))
+  expect_true(any(grepl("geo_data()", geographic_mapping_lines, fixed = TRUE)))
+  expect_true(any(grepl("geo_map(3)", geographic_mapping_lines, fixed = TRUE)))
+  expect_true(any(grepl("var_levels", geographic_mapping_lines, fixed = TRUE)))
+  expect_true(any(grepl("ggplot2::geom_sf", geographic_mapping_lines, fixed = TRUE)))
+  expect_false(any(grepl("known issues", geographic_mapping_lines, ignore.case = TRUE)))
 
   expect_true(any(grepl("resource_type", resources_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_data", resources_r_lines, fixed = TRUE)))

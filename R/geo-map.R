@@ -83,8 +83,10 @@ geo_map <- function(level = 2, dataframe = FALSE) {
 
   dt_sf$name <- NULL
 
-  character_columns <- purrr::map_lgl(dt_sf, is.character)
-  dt_sf[character_columns] <- purrr::map(dt_sf[character_columns], stringr::str_trim)
+  dt_sf <- dt_sf |>
+    dplyr::mutate(
+      dplyr::across(dplyr::where(is.character), stringr::str_trim)
+    )
 
   if (level != 9) {
     dt_sf <- dt_sf |>

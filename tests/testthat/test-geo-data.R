@@ -33,10 +33,13 @@ test_that("geo_map dataframe = TRUE drops geometry column", {
   )
   skip_if_offline()
 
-  nuts2_tbl <- geo_map(level = 2, dataframe = TRUE)
+  nuts3_sf <- geo_map(level = 3)
+  nuts3_tbl <- geo_map(level = 3, dataframe = TRUE)
 
-  expect_s3_class(nuts2_tbl, "tbl_df")
-  expect_false(inherits(nuts2_tbl, "sf"))
-  expect_false("geometry" %in% names(nuts2_tbl))
-  expect_true("code" %in% names(nuts2_tbl))
+  expect_s3_class(nuts3_sf, "sf")
+  expect_true("geometry" %in% names(nuts3_sf))
+  expect_s3_class(nuts3_tbl, "tbl_df")
+  expect_false(inherits(nuts3_tbl, "sf"))
+  expect_false("geometry" %in% names(nuts3_tbl))
+  expect_true("code" %in% names(nuts3_tbl))
 })

@@ -9,6 +9,7 @@
 [![Lifecycle:
 stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr)
+[![pkgdown](https://github.com/emraher/tuikr/actions/workflows/pkgdown.yaml/badge.svg)](https://emraher.github.io/tuikr/)
 <!-- badges: end -->
 
 R package for accessing Turkish Statistical Institute (TUIK) data from
@@ -34,60 +35,39 @@ devtools::install_github("emraher/tuikr")
 ``` r
 library(tuikr)
 
-# List all themes
+# 1. List themes
 themes <- statistical_themes()
-head(themes)
 
-# Get statistical tables and SDMX dataflows for a theme
-tables <- statistical_tables(1)
-head(tables, 3)
+# 2. Tables for Population & Demography (theme 11)
+pop_tables <- statistical_tables("11")
 
-# Discover all portal resources for the same theme
-resources <- statistical_resources(1)
-head(resources, 3)
+# 3. SDMX dataflows only
+pop_flows <- dplyr::filter(pop_tables, node_type == "dataflow")
 
-# Filter SDMX-backed rows
-sdmx_tables <- tables[tables$node_type == "dataflow", ]
-head(sdmx_tables, 3)
+# 4. File downloads expose a direct table_url
+pop_files <- dplyr::filter(pop_tables, node_type == "istab")
+pop_files$table_url[1]
 
-# Download observations for one SDMX dataflow
-sdmx_data <- statistical_data(sdmx_tables$dataflow_id[1])
-head(sdmx_data, 3)
+# 5. Download one dataset (long layout -- the only supported layout)
+pop_data <- statistical_data(pop_flows$dataflow_id[1])
 
-# Get legacy database URLs for the same theme
-databases <- statistical_databases(1)
-head(databases, 3)
+# 6. Legacy database URLs
+pop_dbs <- statistical_databases("11")
 
-# Discover press releases and reports
-news_items <- statistical_resources(1, type = c("press", "report"))
-head(news_items, 3)
-
-# Filter direct file downloads
-file_tables <- tables[tables$node_type == "istab", ]
-head(file_tables$table_url, 3)
+# 7. All portal resources
+pop_resources <- statistical_resources("11")
 ```
 
-`statistical_resources()` returns the full supported portal catalog for
-a theme: SDMX dataflows, direct file downloads, legacy databases, press
-releases, and reports.
-
-`statistical_tables()` returns a `node_type` column. Use `"dataflow"`
-rows for SDMX-backed datasets and `"istab"` rows for direct file
-downloads exposed in `table_url`.
-
-`dataflow_id` is the canonical machine identifier for SDMX-backed
-datasets. Use `statistical_data()` to download observations. Some
-datasets work with the default `key = "ALL"`, while others need a more
-specific SDMX key.
-
-In long output, coded dimensions keep their original machine-readable
-values and gain adjacent `*_label` columns when TUIK exposes
-human-readable metadata for those codes.
+`statistical_data()` always returns long-format output. When TUIK
+exposes human-readable code-list metadata, coded dimensions gain
+adjacent `*_label` columns. The default `key = "ALL"` works for many
+datasets, but some SDMX dataflows need a narrower key to constrain the
+remaining dimensions.
 
 ### Geographic Data
 
 ``` r
-library(dplyr)
+library(tuikr)
 
 # List available geographic variables
 variables <- geo_data()
@@ -107,23 +87,32 @@ head(population, 3)
 nuts2_map <- geo_map(level = 2)  # 26 regions
 nuts3_map <- geo_map(level = 3)  # 81 provinces
 lau1_map <- geo_map(level = 4)   # 973 districts
+settlements <- geo_map(level = 9)  # settlement points
 
 # Preview map data
 head(nuts3_map, 3)
 ```
 
+`geo_map()` returns `sf` objects in WGS 84 (EPSG:4326), ready for
+`dplyr::left_join()` on the `code` column when you want to combine
+boundaries with values returned by `geo_data()`.
+
 ## Available Map Levels
 
-- **Level 2**: NUTS-2 regions (26 regions)
-- **Level 3**: NUTS-3 / Provincial level (81 provinces)
-- **Level 4**: LAU-1 / District level (973 districts)
-- **Level 9**: Settlement points (returns POINT geometries)
+| Level | Geography         | Count | Geometry     |
+|------:|:------------------|------:|:-------------|
+|     2 | NUTS-2 regions    |    26 | MULTIPOLYGON |
+|     3 | NUTS-3 provinces  |    81 | MULTIPOLYGON |
+|     4 | LAU-1 districts   |   973 | MULTIPOLYGON |
+|     9 | Settlement points | 1,003 | POINT        |
 
 ## Vignettes
 
 - [Getting
-  Started](https://github.com/emraher/tuikr/blob/master/vignettes/getting-started.Rmd)
-- [Geographic Mapping
-  Examples](https://github.com/emraher/tuikr/blob/master/vignettes/geographic-mapping.Rmd)
-- [Known
-  Issues](https://github.com/emraher/tuikr/blob/master/vignettes/known-issues.Rmd)
+  Started](https://github.com/emraher/tuikr/blob/dev/vignettes/getting-started.Rmd)
+- [Geographic
+  Mapping](https://github.com/emraher/tuikr/blob/dev/vignettes/geographic-mapping.Rmd)
+
+## License
+
+MIT © Emrah Er

@@ -1,0 +1,146 @@
+---
+title: "Downloading and Plotting Maps with tuikr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Downloading and Plotting Maps with tuikr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = build_examples,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 6
+)
+```
+
+## Introduction
+
+`tuikr` provides both the indicator values and the ready-to-join geometries you
+need for a map. The workflow is:
+
+1. discover a geographic variable with `tuikr::geo_data()`
+2. confirm the available NUTS levels in `var_levels`
+3. download the values for one level
+4. join them to `tuikr::geo_map()`
+5. plot the result
+
+## Find a Geographic Series
+
+Start in metadata mode and inspect the housing-sales indicator used in the map
+below.
+
+```{r geo-metadata}
+geo_variable_catalog <- tuikr::geo_data()
+
+housing_sales_series <- geo_variable_catalog |>
+  dplyr::filter(var_num == "INS-GK055-O006")
+
+housing_sales_series |>
+  dplyr::select(
+    var_name,
+    var_num,
+    var_levels,
+    var_period,
+    var_source,
+    var_recordnum
+  )
+```
+
+`var_levels` is a list-column. Pull the first element to see the supported
+levels for this series.
+
+```{r geo-levels}
+housing_sales_series$var_levels[[1]]
+```
+
+## Download the Values
+
+`INS-GK055-O006` is published at level 3, which is the provincial map.
+
+```{r geo-download}
+housing_sales <- tuikr::geo_data(
+  variable_no = "INS-GK055-O006",
+  variable_level = 3,
+  variable_source = "ilGostergeleri",
+  variable_period = "yillik",
+  variable_recnum = 5
+) |>
+  dplyr::mutate(
+    date = as.integer(date),
+    konut_satis_sayilari_toplam = as.numeric(konut_satis_sayilari_toplam)
+  )
+
+housing_sales |>
+  dplyr::slice_head(n = 8)
+```
+
+## Download the Boundaries
+
+`tuikr::geo_map(3)` returns an `sf` object that is already keyed by the `code`
+column used in `tuikr::geo_data()`.
+
+```{r geo-boundaries}
+province_boundaries <- tuikr::geo_map(3)
+
+province_boundaries |>
+  sf::st_drop_geometry() |>
+  dplyr::select(code, ad) |>
+  dplyr::slice_head(n = 6)
+```
+
+If you only want the attribute table, call `tuikr::geo_map(level = 3, dataframe = TRUE)`.
+
+## Join and Plot
+
+Filter to the latest available year, join on `code`, and plot a choropleth with
+`ggplot2::geom_sf()`.
+
+```{r geo-plot}
+latest_year <- max(housing_sales$date, na.rm = TRUE)
+
+housing_sales_latest <- housing_sales |>
+  dplyr::filter(date == latest_year)
+
+housing_sales_map <- province_boundaries |>
+  dplyr::left_join(housing_sales_latest, by = "code")
+
+ggplot2::ggplot(housing_sales_map) +
+  ggplot2::geom_sf(
+    ggplot2::aes(fill = konut_satis_sayilari_toplam),
+    color = "white",
+    linewidth = 0.1
+  ) +
+  ggplot2::coord_sf(datum = NA) +
+  ggplot2::scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    legend.key.width = grid::unit(3, "cm")
+  ) +
+  ggplot2::labs(
+    title = sprintf("Housing Sales by Province (%s)", latest_year),
+    fill = "Sales",
+    caption = "Source: TUIK"
+  )
+```
+
+## Troubleshooting
+
+If a request fails, go back to the metadata table and inspect `var_levels`
+before changing `variable_level`. Many indicators are not available at every
+geographic level.
+
+If the join produces missing fills, inspect the boundary keys with
+`sf::st_drop_geometry(province_boundaries)` or call `tuikr::geo_map(level = 3, dataframe = TRUE)`
+to compare codes directly.
+
+If you need a different geometry type, remember that levels 2, 3, and 4 return
+polygon boundaries while level 9 returns settlement points.
