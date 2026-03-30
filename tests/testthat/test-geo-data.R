@@ -4,9 +4,9 @@ test_that("geo_data returns metadata without parameters", {
     "Set RUN_NETWORK_TESTS=true to run network integration tests."
   )
   skip_if_offline()
-
+  
   dt <- geo_data()
-
+  
   expect_s3_class(dt, "tbl_df")
   expect_named(dt, c("var_name", "var_num", "var_levels", "var_period"))
   expect_true("var_name" %in% names(dt))
