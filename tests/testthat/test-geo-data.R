@@ -56,7 +56,7 @@ test_that("geo_data validates NUTS level", {
       var_num = "SNM-GK160951-O33303",
       var_level = 5
     ),
-    "var_level must be 2, 3, or 4"
+    "var_level must be a single level value of 2, 3, or 4"
   )
 })
 

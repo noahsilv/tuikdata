@@ -57,7 +57,7 @@ geo_data <- function(var_num = NULL,
   if (!is.null(var_level)) {
     if (length(var_level) != 1 || is.na(var_level) || !(var_level %in% c(2, 3, 4))) {
       stop(
-        "var_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1). var_level must be a single level value of 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1).",
+        "var_level must be a single level value of 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1).",
         call. = FALSE
       )
     }
