@@ -54,12 +54,18 @@ geo_data <- function(var_num = NULL,
   validated_lang <- validate_geo_lang(lang)
   selected_var_num <- if (is.null(var_num)) NULL else validate_string_single(var_num, "var_num")
 
+  if (!is.null(var_level)) {
+    if (length(var_level) != 1 || is.na(var_level) || !(var_level %in% c(2, 3, 4))) {
+      stop(
+        "var_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1). var_level must be a single level value of 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1).",
+        call. = FALSE
+      )
+    }
+  }
+
   if (data_mode) {
     if (is.null(selected_var_num)) {
       stop("var_num is required for data download.", call. = FALSE)
-    }
-    if (!is.null(var_level) && !(var_level %in% c(2, 3, 4))) {
-      stop("var_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1)")
     }
   }
 

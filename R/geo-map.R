@@ -53,8 +53,8 @@
 #'
 #' @export
 geo_map <- function(level = 2, dataframe = FALSE) {
-  if (!(level %in% c(2, 3, 4, 9))) {
-    stop("level must be 2, 3, 4, or 9")
+  if (length(level) != 1 || is.na(level) || !(level %in% c(2, 3, 4, 9))) {
+    stop("level must be a single value of 2, 3, 4, or 9.", call. = FALSE)
   }
 
   urls <- c(
