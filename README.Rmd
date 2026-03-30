@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![DOI](https://zenodo.org/badge/313863336.svg)](https://zenodo.org/badge/latestdoi/313863336)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr)
-[![pkgdown](https://github.com/emraher/tuikr/actions/workflows/pkgdown.yaml/badge.svg)](https://emraher.github.io/tuikr/)
+[![pkgdown](https://github.com/emraher/tuikr/actions/workflows/pkgdown.yaml/badge.svg)](https://eremrah.com/tuikr/)
 <!-- badges: end -->
 
 R package for accessing Turkish Statistical Institute (TUIK) data from two portals:
@@ -131,8 +131,8 @@ with values returned by `geo_data()`.
 
 ## Vignettes
 
-- [Getting Started](https://github.com/emraher/tuikr/blob/dev/vignettes/getting-started.Rmd)
-- [Geographic Mapping](https://github.com/emraher/tuikr/blob/dev/vignettes/geographic-mapping.Rmd)
+- [Getting Started](https://github.com/emraher/tuikr/blob/master/vignettes/getting-started.Rmd)
+- [Geographic Mapping](https://github.com/emraher/tuikr/blob/master/vignettes/geographic-mapping.Rmd)
 
 ## License
 

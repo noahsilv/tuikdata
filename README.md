@@ -9,7 +9,7 @@
 [![Lifecycle:
 stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr)
-[![pkgdown](https://github.com/emraher/tuikr/actions/workflows/pkgdown.yaml/badge.svg)](https://emraher.github.io/tuikr/)
+[![pkgdown](https://github.com/emraher/tuikr/actions/workflows/pkgdown.yaml/badge.svg)](https://eremrah.com/tuikr/)
 <!-- badges: end -->
 
 R package for accessing Turkish Statistical Institute (TUIK) data from
@@ -36,33 +36,43 @@ devtools::install_github("emraher/tuikr")
 library(tuikr)
 
 # 1. List themes
-themes <- statistical_themes()
+theme_catalog <- statistical_themes()
 
 # 2. Tables for Population & Demography (theme 11)
-pop_tables <- statistical_tables("11")
+population_tables <- statistical_tables("11")
 
 # 3. SDMX dataflows only
-pop_flows <- dplyr::filter(pop_tables, node_type == "dataflow")
+population_dataflows <- dplyr::filter(
+  population_tables,
+  node_type == "dataflow"
+)
 
 # 4. File downloads expose a direct table_url
-pop_files <- dplyr::filter(pop_tables, node_type == "istab")
-pop_files$table_url[1]
+population_files <- dplyr::filter(
+  population_tables,
+  node_type == "istab"
+)
+population_files$table_url[1]
 
 # 5. Download one dataset
-pop_data <- statistical_data(pop_flows$dataflow_id[1])
+population_observations <- statistical_data(
+  population_dataflows$dataflow_id[1]
+)
 
 # 6. Legacy database URLs
-pop_dbs <- statistical_databases("11")
+population_databases <- statistical_databases("11")
 
 # 7. All portal resources
-pop_resources <- statistical_resources("11")
+population_resources <- statistical_resources("11")
 
 # 8. Press releases and reports keep their portal URLs
-news_and_reports <- dplyr::filter(
-  pop_resources,
+population_publications <- dplyr::filter(
+  population_resources,
   resource_type %in% c("press", "report")
 )
-news_and_reports[8, c("resource_type", "resource_name", "resource_url")]
+population_publications |>
+  dplyr::select(resource_type, resource_name, resource_url) |>
+  dplyr::slice(3)
 ```
 
 `statistical_data()` adds adjacent `*_label` columns when TUIK exposes
@@ -76,19 +86,19 @@ the remaining dimensions.
 library(tuikr)
 
 # List available geographic variables
-variables <- geo_data()
-head(variables, 3)
+geo_variable_catalog <- geo_data()
+head(geo_variable_catalog, 3)
 
 # List geographic variables in Turkish
-variables_tr <- geo_data(lang = "tr")
-head(variables_tr, 3)
+geo_variable_catalog_tr <- geo_data(lang = "tr")
+head(geo_variable_catalog_tr, 3)
 
 # Download data for a specific variable
-population <- geo_data(
+population_values <- geo_data(
   var_num = "ADNKS-GK137473-O29001",
   var_level = 3
 )
-head(population, 3)
+head(population_values, 3)
 
 # Get map boundaries at different levels
 nuts2_map <- geo_map(level = 2)  # 26 regions
@@ -116,9 +126,9 @@ boundaries with values returned by `geo_data()`.
 ## Vignettes
 
 - [Getting
-  Started](https://github.com/emraher/tuikr/blob/dev/vignettes/getting-started.Rmd)
+  Started](https://github.com/emraher/tuikr/blob/master/vignettes/getting-started.Rmd)
 - [Geographic
-  Mapping](https://github.com/emraher/tuikr/blob/dev/vignettes/geographic-mapping.Rmd)
+  Mapping](https://github.com/emraher/tuikr/blob/master/vignettes/geographic-mapping.Rmd)
 
 ## License
 
