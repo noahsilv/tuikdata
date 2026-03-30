@@ -102,67 +102,20 @@ original codes.
 
 ## Download a Spreadsheet Table
 
-The spreadsheet endpoint rejects a cold scripted request. Reuse the portal
-session with `crul::HttpClient` so the download works during the pkgdown build.
+`istab` rows expose the spreadsheet download link in `table_url`.
 
 ```{r spreadsheet-download}
-browser_headers <- list(
-  Accept = "application/json, text/plain, */*",
-  `Accept-Language` = "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7",
-  `User-Agent` = paste(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "AppleWebKit/537.36 (KHTML, like Gecko)",
-    "Chrome/122.0.0.0 Safari/537.36"
-  )
-)
+population_file_url <- population_tables |>
+  dplyr::filter(node_type == "istab") |>
+  dplyr::slice_head(n = 1) |>
+  dplyr::pull(table_url)
 
-portal_url <- "https://veriportali.tuik.gov.tr/en/statistical-themes"
-cookie_store <- tempfile(fileext = ".txt")
-request_opts <- list(cookiefile = cookie_store, cookiejar = cookie_store)
-
-landing_client <- crul::HttpClient$new(
-  url = portal_url,
-  headers = browser_headers,
-  opts = request_opts
-)
-
-landing_client$get()$raise_for_status()
-
-population_file_tables <- population_tables |>
-  dplyr::filter(node_type == "istab")
-
-spreadsheet_client <- crul::HttpClient$new(
-  url = population_file_tables$table_url[[1]],
-  headers = c(
-    browser_headers,
-    list(
-      Referer = portal_url,
-      Origin = "https://veriportali.tuik.gov.tr"
-    )
-  ),
-  opts = request_opts
-)
-
-spreadsheet_response <- spreadsheet_client$get()
-spreadsheet_response$raise_for_status()
-
-spreadsheet_path <- file.path(tempdir(), "tuikr-population-download")
-writeBin(spreadsheet_response$content, spreadsheet_path)
-
-spreadsheet_format <- readxl::excel_format(spreadsheet_path)
-spreadsheet_format
-
-spreadsheet_preview <- readxl::read_excel(
-  spreadsheet_path,
-  n_max = 10,
-  col_names = FALSE
-)
-
-spreadsheet_preview
+population_file_url
 ```
 
-The preview is intentionally raw. `istab` files often arrive with stacked
-headers, mixed labels, and source notes inside the worksheet.
+Open that URL in a browser, or pass it to your own download workflow. `istab`
+files often arrive with stacked headers, mixed labels, and source notes inside
+the worksheet.
 
 ## Inspect the Full Resource Catalog
 
@@ -175,16 +128,3 @@ population_resources <- tuikr::statistical_resources("11")
 population_resources |>
   dplyr::count(resource_type)
 ```
-
-## Troubleshooting
-
-If an SDMX request complains about unconstrained dimensions, supply a narrower
-`key` such as `key = "A.B.ALL"` to pin down the remaining dimensions.
-
-If a spreadsheet download fails, keep the `table_url` but recreate the portal
-session first. The file endpoint expects the same cookie-backed browser session
-that the statistical portal uses for navigation.
-
-If a workbook looks messy in `readxl`, treat that as upstream structure rather
-than a parsing bug. `col_names = FALSE`, `skip`, and `janitor::clean_names()`
-are the usual cleanup tools once you decide which rows hold the real table.

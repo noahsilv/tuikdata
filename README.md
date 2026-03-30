@@ -56,6 +56,13 @@ pop_dbs <- statistical_databases("11")
 
 # 7. All portal resources
 pop_resources <- statistical_resources("11")
+
+# 8. Press releases and reports keep their portal URLs
+news_and_reports <- dplyr::filter(
+  pop_resources,
+  resource_type %in% c("press", "report")
+)
+news_and_reports[8, c("resource_type", "resource_name", "resource_url")]
 ```
 
 `statistical_data()` adds adjacent `*_label` columns when TUIK exposes

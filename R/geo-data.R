@@ -52,9 +52,10 @@ geo_data <- function(var_num = NULL,
                      lang = "en") {
   data_mode <- !is.null(var_num) || !is.null(var_level)
   validated_lang <- validate_geo_lang(lang)
+  selected_var_num <- if (is.null(var_num)) NULL else validate_string_single(var_num, "var_num")
 
   if (data_mode) {
-    if (is.null(var_num)) {
+    if (is.null(selected_var_num)) {
       stop("var_num is required for data download.", call. = FALSE)
     }
     if (!is.null(var_level) && !(var_level %in% c(2, 3, 4))) {
@@ -69,7 +70,7 @@ geo_data <- function(var_num = NULL,
 
   variable_metadata <- build_geo_variable_metadata(doc, validated_lang)
 
-  if (is.null(var_num)) {
+  if (is.null(selected_var_num)) {
     return(
       variable_metadata |>
         dplyr::select(
@@ -81,12 +82,12 @@ geo_data <- function(var_num = NULL,
     )
   }
 
-  if (!(var_num %in% variable_metadata$var_num)) {
+  if (!(selected_var_num %in% variable_metadata$var_num)) {
     stop("var_num must match one of the values returned by geo_data().", call. = FALSE)
   }
 
   series_metadata <- variable_metadata |>
-    dplyr::filter(.data$var_num == var_num) |>
+    dplyr::filter(.data$var_num == .env$selected_var_num) |>
     dplyr::slice(1)
 
   available_levels <- sort(unique(unlist(series_metadata$var_levels[[1]])))
@@ -97,7 +98,7 @@ geo_data <- function(var_num = NULL,
     } else {
       stop(
         paste0(
-          "var_level is required for ", var_num,
+          "var_level is required for ", selected_var_num,
           ". Valid levels: ",
           paste(available_levels, collapse = ", ")
         ),
@@ -109,7 +110,7 @@ geo_data <- function(var_num = NULL,
   if (!(var_level %in% available_levels)) {
     stop(
       paste0(
-        "var_level must be one of the available levels for ", var_num,
+        "var_level must be one of the available levels for ", selected_var_num,
         ": ",
         paste(available_levels, collapse = ", ")
       ),
@@ -122,7 +123,7 @@ geo_data <- function(var_num = NULL,
   geo_json_data <- tryCatch(
     jsonlite::fromJSON(query_url),
     error = function(e) {
-      stop("Data '", var_num, "' is not available at NUTS level ", var_level)
+      stop("Data '", selected_var_num, "' is not available at NUTS level ", var_level)
     }
   )
 

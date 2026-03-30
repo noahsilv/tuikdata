@@ -236,6 +236,72 @@ test_that("geo_data derives request parameters from metadata", {
   expect_true("total_population" %in% names(downloaded_data))
 })
 
+test_that("geo_data selects metadata by the requested var_num", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          ),
+          list(
+            gostergeNo = "SERIES-2",
+            gostergeAdi = "Konut Satislari",
+            gostergeAdiEn = "House Sales",
+            duzeyler = list(3),
+            period = "yillik",
+            kaynak = "ilGostergeleri",
+            kayitSayisi = 7
+          )
+        )
+      )
+    )
+  )
+
+  observed_urls <- character(0)
+
+  geo_data_payload <- list(
+    gostergeNo = "SERIES-2",
+    gosterge_ad = "Konut Satislari",
+    gosterge_ad_ing = "House Sales",
+    period = "yillik",
+    ondalikHassasiyet = "0",
+    metaVeriURL = "https://example.com/meta",
+    tarihler = c("2025"),
+    veriler = tibble::tibble(
+      duzeyKodu = "06",
+      veri = list(c("100"))
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      observed_urls <<- c(observed_urls, txt)
+      if (grepl("sideMenu.json", txt, fixed = TRUE)) {
+        return(side_menu_payload)
+      }
+      if (grepl("GetMapData", txt, fixed = TRUE)) {
+        return(geo_data_payload)
+      }
+      stop("Unexpected URL in test: ", txt)
+    },
+    .package = "jsonlite"
+  )
+
+  downloaded_data <- geo_data(var_num = "SERIES-2")
+
+  expect_true(any(grepl("gostergeNo=SERIES-2", observed_urls, fixed = TRUE)))
+  expect_true(any(grepl("kaynak=ilGostergeleri", observed_urls, fixed = TRUE)))
+  expect_true(any(grepl("kayitSayisi=7", observed_urls, fixed = TRUE)))
+  expect_true("house_sales" %in% names(downloaded_data))
+})
+
 test_that("geo_data requires var_level when metadata exposes multiple levels", {
   side_menu_payload <- list(
     menu = list(
