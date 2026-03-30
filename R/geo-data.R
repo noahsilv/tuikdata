@@ -141,7 +141,7 @@ geo_data <- function(var_num = NULL,
     tidyr::unnest_wider(col = "veri", names_sep = ", ") |>
     purrr::set_names(c("code", dates)) |>
     tidyr::pivot_longer(
-      cols = -code,
+      cols = -dplyr::all_of("code"),
       names_to = "date",
       values_to = vals_name
     ) |>
