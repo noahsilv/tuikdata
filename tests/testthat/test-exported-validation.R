@@ -33,7 +33,7 @@ test_that("geo_data requires var_level when a series supports multiple levels", 
 test_that("geo_map validates the level argument", {
   expect_error(
     geo_map(level = 5),
-    "level must be 2, 3, 4, or 9"
+    "level must be a single value of 2, 3, 4, or 9"
   )
 })
 
