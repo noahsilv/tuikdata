@@ -17,7 +17,7 @@ validate_string_single <- function(value, arg_name, allowed_values = NULL) {
       call. = FALSE
     )
   }
-  return(value)
+  value
 }
 
 #' @noRd
@@ -36,13 +36,13 @@ validate_dataflow_id <- function(dataflow_id) {
     )
   }
 
-  return(validated_dataflow_id)
+  validated_dataflow_id
 }
 
 #' @noRd
 #' @keywords internal
 validate_statistical_lang <- function(lang) {
-  return(validate_string_single(lang, "lang", allowed_values = c("tr", "en")))
+  validate_string_single(lang, "lang", allowed_values = c("tr", "en"))
 }
 
 #' @noRd
@@ -59,7 +59,7 @@ format_valid_theme_choices <- function(theme_tree) {
     valid_theme_table$theme_name
   )
 
-  return(paste(formatted_choices, collapse = "\n"))
+  paste(formatted_choices, collapse = "\n")
 }
 
 #' @noRd
@@ -68,13 +68,11 @@ split_dataflow_id <- function(dataflow_id) {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   dataflow_parts <- strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
 
-  dataflow_components <- list(
+  list(
     agency_id = dataflow_parts[[1]],
     flow_id = dataflow_parts[[2]],
     version = dataflow_parts[[3]]
   )
-
-  return(dataflow_components)
 }
 
 #' @noRd
@@ -84,7 +82,7 @@ build_sdmx_structure_url <- function(dataflow_id,
                                      references = "Descendants") {
   dataflow_parts <- split_dataflow_id(dataflow_id)
 
-  structure_url <- paste0(
+  paste0(
     "https://nsiws.tuik.gov.tr/rest/dataflow/",
     dataflow_parts$agency_id, "/",
     dataflow_parts$flow_id, "/",
@@ -92,8 +90,6 @@ build_sdmx_structure_url <- function(dataflow_id,
     "?detail=", detail,
     "&references=", references
   )
-
-  return(structure_url)
 }
 
 #' @noRd
@@ -117,28 +113,24 @@ build_sdmx_data_url <- function(dataflow_id,
     query_parts <- c(query_parts, paste0("endPeriod=", end))
   }
 
-  data_url <- paste0(
+  paste0(
     "https://nsiws.tuik.gov.tr/rest/data/",
     validated_dataflow_id, "/",
     key,
     "/?",
     paste(query_parts, collapse = "&")
   )
-
-  return(data_url)
 }
 
 #' @noRd
 #' @keywords internal
 read_sdmx_document <- function(file) {
-  sdmx_document <- rsdmx::readSDMX(
+  rsdmx::readSDMX(
     file = file,
     isURL = TRUE,
     validate = FALSE,
     verbose = FALSE
   )
-
-  return(sdmx_document)
 }
 
 #' Normalize SDMX data to tibble format with trimmed columns.
@@ -156,12 +148,10 @@ normalize_sdmx_data <- function(sdmx_document) {
   sdmx_data_frame <- as.data.frame(sdmx_document, stringsAsFactors = FALSE)
   sdmx_tibble <- tibble::as_tibble(sdmx_data_frame)
 
-  normalized_tibble <- dplyr::mutate(
+  dplyr::mutate(
     sdmx_tibble,
     dplyr::across(dplyr::where(is.character), stringr::str_trim)
   )
-
-  return(normalized_tibble)
 }
 
 #' Clean SDMX long-form data by removing invariant dimensions and adding labels.
@@ -187,7 +177,7 @@ clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
   keep_cols <- purrr::map_lgl(candidate_cols, function(column_name) {
     column_values <- sdmx_data[[column_name]]
     unique_values <- unique(column_values[!is.na(column_values)])
-    return(length(unique_values) > 1)
+    length(unique_values) > 1
   })
 
   kept_candidate_cols <- candidate_cols[keep_cols]
@@ -217,7 +207,7 @@ clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
       )
       return(c(base_pair, label_pair))
     }
-    return(base_pair)
+    base_pair
   })
 
   protected_pairs <- purrr::keep(
@@ -226,7 +216,7 @@ clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
   ) |>
     purrr::imap(~ cleaned_long_data[[.y]])
 
-  return(tibble::as_tibble(c(purrr::list_flatten(col_pairs), protected_pairs)))
+  tibble::as_tibble(c(purrr::list_flatten(col_pairs), protected_pairs))
 }
 
 #' Lookup localized label value from rsdmx language list.
@@ -255,7 +245,7 @@ lookup_first_localized_value <- function(value, lang) {
     return(NA_character_)
   }
 
-  return(as.character(flattened_values[[1]]))
+  as.character(flattened_values[[1]])
 }
 
 #' Extract dimension code-to-label mappings from SDMX structure.
@@ -276,7 +266,7 @@ extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "en") {
   sdmx_codelists <- raw_sdmx@codelists@codelists
   codelist_ids <- purrr::map_chr(sdmx_codelists, ~ .x@id)
 
-  dimension_label_maps <- purrr::map(sdmx_dimensions, function(sdmx_dimension) {
+  purrr::map(sdmx_dimensions, function(sdmx_dimension) {
     codelist_id <- sdmx_dimension@codelist
     if (is.na(codelist_id) || !nzchar(codelist_id)) {
       return(NULL)
@@ -295,14 +285,12 @@ extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "en") {
       if (is.na(code_label) || !nzchar(code_label)) {
         code_label <- x@id
       }
-      return(code_label)
+      code_label
     })
-    return(stats::setNames(code_labels, code_ids))
+    stats::setNames(code_labels, code_ids)
   }) |>
     purrr::set_names(purrr::map_chr(sdmx_dimensions, ~ .x@conceptRef)) |>
     purrr::compact()
-
-  return(dimension_label_maps)
 }
 
 #' Apply dimension label mapping to observation values.
@@ -328,7 +316,7 @@ apply_dimension_label_map <- function(values, dimension_name, label_maps) {
   missing_labels <- is.na(mapped_values)
   mapped_values[missing_labels] <- as.character(values[missing_labels])
 
-  return(mapped_values)
+  mapped_values
 }
 
 #' @noRd
@@ -342,7 +330,7 @@ build_statistical_portal_request <- function(lang = "en") {
     en = "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
   )
 
-  request_info <- list(
+  list(
     page_url = paste0(
       "https://veriportali.tuik.gov.tr/", validated_lang, "/statistical-themes"
     ),
@@ -359,8 +347,6 @@ build_statistical_portal_request <- function(lang = "en") {
       )
     )
   )
-
-  return(request_info)
 }
 
 #' Fetch theme tree from TUIK statistical portal API.
@@ -417,7 +403,7 @@ fetch_theme_tree <- function(lang = "en") {
     stop("TUIK API returned an error: ", parsed_json$message, call. = FALSE)
   }
 
-  return(parsed_json$data)
+  parsed_json$data
 }
 
 #' Recursively collect theme nodes by icon type.
@@ -444,7 +430,7 @@ collect_nodes_by_icon <- function(node_list, target_icons) {
     } else {
       list()
     }
-    return(c(matched, children_matched))
+    c(matched, children_matched)
   }) |>
     purrr::list_flatten()
 }
@@ -465,7 +451,7 @@ normalize_statistical_url <- function(raw_url) {
     return(raw_url)
   }
 
-  return(paste0("https://veriportali.tuik.gov.tr", raw_url))
+  paste0("https://veriportali.tuik.gov.tr", raw_url)
 }
 
 #' Extract SDMX dataflow ID from databrowser URL.
@@ -480,13 +466,13 @@ normalize_statistical_url <- function(raw_url) {
 #' @noRd
 #' @keywords internal
 extract_dataflow_id <- function(raw_url) {
-  return(stringr::str_extract(raw_url, "[^/]+$"))
+  stringr::str_extract(raw_url, "[^/]+$")
 }
 
 #' @noRd
 #' @keywords internal
 validate_statistical_sdmx_text <- function(value, argument_name) {
-  return(validate_string_single(value, argument_name))
+  validate_string_single(value, argument_name)
 }
 
 #' @noRd
@@ -496,7 +482,7 @@ validate_statistical_sdmx_key <- function(key) {
   if (!nzchar(validated_key)) {
     stop("key must not be empty.", call. = FALSE)
   }
-  return(validated_key)
+  validated_key
 }
 
 #' @noRd
@@ -505,7 +491,7 @@ validate_statistical_sdmx_optional_text <- function(value, argument_name) {
   if (is.null(value)) {
     return(value)
   }
-  return(validate_statistical_sdmx_text(value, argument_name))
+  validate_statistical_sdmx_text(value, argument_name)
 }
 
 #' @noRd
@@ -531,7 +517,7 @@ validate_statistical_resource_types <- function(type) {
     )
   }
 
-  return(unique(type))
+  unique(type)
 }
 
 #' Build resource tibble from theme node.
@@ -568,7 +554,7 @@ build_statistical_resource_tibble <- function(theme_node) {
   resource_type_vec <- purrr::map_chr(resource_nodes, "icon")
   raw_urls <- purrr::map_chr(resource_nodes, "url")
 
-  resource_rows <- tibble::tibble(
+  tibble::tibble(
     theme_name = theme_node[["name"]],
     theme_id = as.character(theme_node[["id"]]),
     resource_name = purrr::map_chr(resource_nodes, "name"),
@@ -580,8 +566,6 @@ build_statistical_resource_tibble <- function(theme_node) {
     ),
     resource_url = purrr::map_chr(raw_urls, normalize_statistical_url)
   )
-
-  return(resource_rows)
 }
 
 #' Validate and extract theme node from theme tree.
@@ -616,5 +600,5 @@ validate_theme <- function(theme, theme_tree) {
   }
 
   theme_idx <- which(top_level_ids == theme_id_chr)
-  return(theme_tree[[theme_idx]])
+  theme_tree[[theme_idx]]
 }

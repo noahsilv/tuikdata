@@ -77,7 +77,7 @@ statistical_data <- function(dataflow_id,
     lang = validated_lang
   )
 
-  return(clean_statistical_long_data(sdmx_data, label_maps = label_maps))
+  clean_statistical_long_data(sdmx_data, label_maps = label_maps)
 }
 
 # Internal SDMX structure helper used for metadata-aware workflows.
@@ -97,11 +97,9 @@ statistical_data_structure <- function(dataflow_id,
 
   raw_sdmx <- read_sdmx_document(structure_url)
 
-  structure_info <- list(
+  list(
     dataflow_id = validated_dataflow_id,
     structure_url = structure_url,
     raw_sdmx = raw_sdmx
   )
-
-  return(structure_info)
 }

@@ -50,11 +50,11 @@ statistical_databases <- function(theme, lang = "en") {
     lang = lang
   )
 
-  return(dplyr::transmute(
+  dplyr::transmute(
     resource_rows,
     theme_name = .data$theme_name,
     theme_id = .data$theme_id,
     db_name = .data$resource_name,
     db_url = .data$resource_url
-  ))
+  )
 }

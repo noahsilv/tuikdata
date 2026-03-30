@@ -29,8 +29,8 @@
 #' @export
 statistical_themes <- function(lang = "en") {
   theme_list <- fetch_theme_tree(lang)
-  return(tibble::tibble(
+  tibble::tibble(
     theme_name = purrr::map_chr(theme_list, "name"),
     theme_id   = purrr::map_chr(theme_list, ~ as.character(.x[["id"]]))
-  ))
+  )
 }

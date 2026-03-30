@@ -98,5 +98,5 @@ geo_map <- function(level = 2, dataframe = FALSE) {
     return(dt_sf)
   }
 
-  return(sf::st_drop_geometry(dt_sf))
+  sf::st_drop_geometry(dt_sf)
 }

@@ -62,8 +62,8 @@ statistical_resources <- function(theme, type = NULL, lang = "en") {
     return(resource_rows)
   }
 
-  return(dplyr::filter(
+  dplyr::filter(
     resource_rows,
     .data$resource_type %in% validated_type
-  ))
+  )
 }

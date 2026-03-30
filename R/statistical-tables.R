@@ -64,7 +64,7 @@ statistical_tables <- function(theme, lang = "en") {
     lang = lang
   )
 
-  return(dplyr::transmute(
+  dplyr::transmute(
     resource_rows,
     theme_name = .data$theme_name,
     theme_id = .data$theme_id,
@@ -72,5 +72,5 @@ statistical_tables <- function(theme, lang = "en") {
     node_type = .data$resource_type,
     dataflow_id = .data$dataflow_id,
     table_url = .data$resource_url
-  ))
+  )
 }

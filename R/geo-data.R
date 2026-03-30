@@ -88,7 +88,7 @@ geo_data <- function(var_num = NULL,
 
   series_metadata <- variable_metadata |>
     dplyr::filter(.data$var_num == .env$selected_var_num) |>
-    dplyr::slice(1)
+    dplyr::slice_head(n = 1)
 
   available_levels <- sort(unique(unlist(series_metadata$var_levels[[1]])))
 
@@ -142,7 +142,7 @@ geo_data <- function(var_num = NULL,
     janitor::clean_names() |>
     dplyr::mutate(code = as.character(.data$code))
 
-  return(formatted_data)
+  formatted_data
 }
 
 #' @noRd
@@ -152,7 +152,7 @@ build_geo_variable_metadata <- function(side_menu_document, lang) {
     purrr::map(~ .x$subMenu) |>
     purrr::flatten()
 
-  variable_metadata <- tibble::tibble(
+  tibble::tibble(
     var_name = submenu_items |>
       purrr::map_chr(~ pick_geo_label(.x$gostergeAdi, .x$gostergeAdiEn, lang)),
     var_num = submenu_items |> purrr::map_chr(~ .x$gostergeNo),
@@ -161,22 +161,18 @@ build_geo_variable_metadata <- function(side_menu_document, lang) {
     var_source = submenu_items |> purrr::map_chr(~ .x$kaynak),
     var_recordnum = submenu_items |> purrr::map_int(~ .x$kayitSayisi)
   )
-
-  return(variable_metadata)
 }
 
 #' @noRd
 #' @keywords internal
 build_geo_data_query_url <- function(series_metadata, var_level) {
-  query_url <- paste0(
+  paste0(
     "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", series_metadata$var_source[[1]],
     "&duzey=", var_level,
     "&gostergeNo=", series_metadata$var_num[[1]],
     "&kayitSayisi=", series_metadata$var_recordnum[[1]],
     "&period=", series_metadata$var_period[[1]]
   )
-
-  return(query_url)
 }
 
 #' @noRd
@@ -190,19 +186,17 @@ normalize_geo_dates <- function(raw_dates) {
     return(raw_dates)
   }
 
-  normalized_dates <- stringr::str_c(
+  stringr::str_c(
     stringr::str_sub(raw_dates, 1L, 4L),
     stringr::str_sub(raw_dates, 5L, 6L),
     sep = "-"
   )
-
-  return(normalized_dates)
 }
 
 #' @noRd
 #' @keywords internal
 validate_geo_lang <- function(lang) {
-  return(validate_string_single(lang, "lang", allowed_values = c("tr", "en")))
+  validate_string_single(lang, "lang", allowed_values = c("tr", "en"))
 }
 
 #' @noRd
@@ -214,5 +208,5 @@ pick_geo_label <- function(label_tr, label_en, lang) {
     return(label_en)
   }
 
-  return(label_tr)
+  label_tr
 }
