@@ -23,14 +23,12 @@ Turkish.}
 \value{
 Returns different structures depending on usage mode:
 
-\strong{Metadata mode} (no parameters): A tibble with 6 columns:
+\strong{Metadata mode} (no parameters): A tibble with 4 columns:
 \describe{
 \item{var_name}{Character. Variable name in the selected language}
 \item{var_num}{Character. Variable number/code for queries}
 \item{var_levels}{List. Available NUTS levels for this variable}
 \item{var_period}{Character. Time period type ("yillik" or "aylik")}
-\item{var_source}{Character. Data source ("medas" or "ilGostergeleri")}
-\item{var_recordnum}{Numeric. Number of available time periods}
 }
 
 \strong{Data mode} (all parameters): A tibble with 3+ columns:

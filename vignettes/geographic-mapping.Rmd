@@ -49,9 +49,7 @@ housing_sales_series |>
     var_name,
     var_num,
     var_levels,
-    var_period,
-    var_source,
-    var_recordnum
+    var_period
   )
 
 geo_variable_catalog_tr |>

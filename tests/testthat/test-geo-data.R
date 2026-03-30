@@ -8,9 +8,46 @@ test_that("geo_data returns metadata without parameters", {
   dt <- geo_data()
   
   expect_s3_class(dt, "tbl_df")
+  expect_named(dt, c("var_name", "var_num", "var_levels", "var_period"))
   expect_true("var_name" %in% names(dt))
   expect_true("var_num" %in% names(dt))
   expect_true(nrow(dt) > 0)
+})
+
+test_that("geo_data metadata hides request plumbing columns", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(2, 3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      return(side_menu_payload)
+    },
+    .package = "jsonlite"
+  )
+
+  variable_catalog <- geo_data()
+
+  expect_named(
+    variable_catalog,
+    c("var_name", "var_num", "var_levels", "var_period")
+  )
+  expect_false("var_source" %in% names(variable_catalog))
+  expect_false("var_recordnum" %in% names(variable_catalog))
 })
 
 test_that("geo_data validates NUTS level", {

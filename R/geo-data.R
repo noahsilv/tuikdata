@@ -11,14 +11,12 @@
 #'
 #' @return Returns different structures depending on usage mode:
 #'
-#' **Metadata mode** (no parameters): A tibble with 6 columns:
+#' **Metadata mode** (no parameters): A tibble with 4 columns:
 #' \describe{
 #'   \item{var_name}{Character. Variable name in the selected language}
 #'   \item{var_num}{Character. Variable number/code for queries}
 #'   \item{var_levels}{List. Available NUTS levels for this variable}
 #'   \item{var_period}{Character. Time period type ("yillik" or "aylik")}
-#'   \item{var_source}{Character. Data source ("medas" or "ilGostergeleri")}
-#'   \item{var_recordnum}{Numeric. Number of available time periods}
 #' }
 #'
 #' **Data mode** (all parameters): A tibble with 3+ columns:
@@ -69,29 +67,25 @@ geo_data <- function(var_num = NULL,
     simplifyDataFrame = FALSE
   )
 
-  submenu_items <- doc$menu |>
-    purrr::map(~ .x$subMenu) |>
-    purrr::flatten()
-
-  variable_dt <- tibble::tibble(
-    var_name = submenu_items |>
-      purrr::map_chr(~ pick_geo_label(.x$gostergeAdi, .x$gostergeAdiEn, validated_lang)),
-    var_num = submenu_items |> purrr::map_chr(~ .x$gostergeNo),
-    var_levels = submenu_items |> purrr::map(~ .x$duzeyler),
-    var_period = submenu_items |> purrr::map_chr(~ .x$period),
-    var_source = submenu_items |> purrr::map_chr(~ .x$kaynak),
-    var_recordnum = submenu_items |> purrr::map_int(~ .x$kayitSayisi)
-  )
+  variable_metadata <- build_geo_variable_metadata(doc, validated_lang)
 
   if (is.null(var_num)) {
-    return(variable_dt)
+    return(
+      variable_metadata |>
+        dplyr::select(
+          "var_name",
+          "var_num",
+          "var_levels",
+          "var_period"
+        )
+    )
   }
 
-  if (!(var_num %in% variable_dt$var_num)) {
+  if (!(var_num %in% variable_metadata$var_num)) {
     stop("var_num must match one of the values returned by geo_data().", call. = FALSE)
   }
 
-  series_metadata <- variable_dt |>
+  series_metadata <- variable_metadata |>
     dplyr::filter(.data$var_num == var_num) |>
     dplyr::slice(1)
 
@@ -123,17 +117,7 @@ geo_data <- function(var_num = NULL,
     )
   }
 
-  var_source <- series_metadata$var_source[[1]]
-  var_period <- series_metadata$var_period[[1]]
-  var_recordnum <- series_metadata$var_recordnum[[1]]
-
-  query_url <- paste0(
-    "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", var_source,
-    "&duzey=", var_level,
-    "&gostergeNo=", var_num,
-    "&kayitSayisi=", var_recordnum,
-    "&period=", var_period
-  )
+  query_url <- build_geo_data_query_url(series_metadata, var_level)
 
   geo_json_data <- tryCatch(
     jsonlite::fromJSON(query_url),
@@ -158,6 +142,40 @@ geo_data <- function(var_num = NULL,
     dplyr::mutate(code = as.character(.data$code))
 
   return(formatted_data)
+}
+
+#' @noRd
+#' @keywords internal
+build_geo_variable_metadata <- function(side_menu_document, lang) {
+  submenu_items <- side_menu_document$menu |>
+    purrr::map(~ .x$subMenu) |>
+    purrr::flatten()
+
+  variable_metadata <- tibble::tibble(
+    var_name = submenu_items |>
+      purrr::map_chr(~ pick_geo_label(.x$gostergeAdi, .x$gostergeAdiEn, lang)),
+    var_num = submenu_items |> purrr::map_chr(~ .x$gostergeNo),
+    var_levels = submenu_items |> purrr::map(~ .x$duzeyler),
+    var_period = submenu_items |> purrr::map_chr(~ .x$period),
+    var_source = submenu_items |> purrr::map_chr(~ .x$kaynak),
+    var_recordnum = submenu_items |> purrr::map_int(~ .x$kayitSayisi)
+  )
+
+  return(variable_metadata)
+}
+
+#' @noRd
+#' @keywords internal
+build_geo_data_query_url <- function(series_metadata, var_level) {
+  query_url <- paste0(
+    "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", series_metadata$var_source[[1]],
+    "&duzey=", var_level,
+    "&gostergeNo=", series_metadata$var_num[[1]],
+    "&kayitSayisi=", series_metadata$var_recordnum[[1]],
+    "&period=", series_metadata$var_period[[1]]
+  )
+
+  return(query_url)
 }
 
 #' @noRd
