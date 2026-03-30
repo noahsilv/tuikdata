@@ -5,7 +5,7 @@ test_that("statistical_data validates dataflow_id before any network call", {
   )
 })
 
-test_that("statistical_data adds label columns to long output for coded dimensions", {
+test_that("statistical_data adds label columns for coded dimensions", {
   testthat::local_mocked_bindings(
     read_sdmx_document = function(file) {
       return(file)

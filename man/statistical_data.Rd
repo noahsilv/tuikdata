@@ -34,14 +34,12 @@ derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
 English labels when available.}
 }
 \value{
-A tibble. By default, returns long-form SDMX observations with
-trimmed character columns, invariant dimensions removed, and
-\code{*_label} columns added for coded dimensions when labels are
+A tibble with trimmed character columns, invariant dimensions removed,
+and \code{*_label} columns added for coded dimensions when labels are
 available.
 }
 \description{
-Downloads a TUIK SDMX dataset identified by \code{dataflow_id} and returns a
-cleaned tibble for analysis.
+Download a TUIK SDMX dataset identified by \code{dataflow_id}.
 }
 \examples{
 \dontrun{
@@ -68,5 +66,5 @@ statistical_data("TR,DF_ADNKS_T26,1.0", lang = "en")
 }
 \seealso{
 \code{\link{statistical_tables}} to discover \code{dataflow_id} values,
-\code{\link{statistical_resources}} for the full portal catalog
+\code{\link{statistical_resources}} for the portal catalog
 }

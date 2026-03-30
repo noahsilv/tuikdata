@@ -1,8 +1,6 @@
 #' Get Geographic Data from TUIK
 #'
-#' Retrieves geographic statistical data from the TUIK geographic portal.
-#' Can be used in two modes: metadata retrieval (no parameters) or
-#' data download (all five parameters must be provided together).
+#' Retrieve geographic metadata or indicator values from the TUIK geographic portal.
 #'
 #' @param var_num Character. Data Series Number (e.g., "SNM-GK160951-O33303").
 #'   Obtain from metadata mode. Required for data download.
@@ -31,9 +29,7 @@
 #' \describe{
 #'   \item{code}{Character. Geographic unit code (NUTS-2, NUTS-3, or LAU-1)}
 #'   \item{date}{Character. Time period (YYYY or YYYY-MM format)}
-#'   \item{variable_name}{Numeric/Character. Values for the requested variable.
-#'     Column name matches the variable name (snake_case). The actual column
-#'     name will vary depending on the variable requested.}
+#'   \item{variable_name}{Numeric/Character. Values for the requested variable.}
 #' }
 #'
 #' @examples
@@ -52,7 +48,7 @@
 #' }
 #'
 #' @seealso
-#' \code{\link{geo_map}} for administrative boundary geometries
+#' \code{\link{geo_map}} for boundary geometries
 #'
 #' @export
 geo_data <- function(var_num = NULL,

@@ -48,7 +48,7 @@ pop_flows <- dplyr::filter(pop_tables, node_type == "dataflow")
 pop_files <- dplyr::filter(pop_tables, node_type == "istab")
 pop_files$table_url[1]
 
-# 5. Download one dataset (long layout -- the only supported layout)
+# 5. Download one dataset
 pop_data <- statistical_data(pop_flows$dataflow_id[1])
 
 # 6. Legacy database URLs
@@ -58,11 +58,10 @@ pop_dbs <- statistical_databases("11")
 pop_resources <- statistical_resources("11")
 ```
 
-`statistical_data()` always returns long-format output. When TUIK
-exposes human-readable code-list metadata, coded dimensions gain
-adjacent `*_label` columns. The default `key = "ALL"` works for many
-datasets, but some SDMX dataflows need a narrower key to constrain the
-remaining dimensions.
+`statistical_data()` adds adjacent `*_label` columns when TUIK exposes
+human-readable code-list metadata. The default `key = "ALL"` works for
+many datasets, but some SDMX dataflows need a narrower key to constrain
+the remaining dimensions.
 
 ### Geographic Data
 

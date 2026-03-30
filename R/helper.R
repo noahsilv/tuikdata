@@ -231,9 +231,7 @@ clean_statistical_long_data <- function(sdmx_data, label_maps = list()) {
 
 #' Lookup localized label value from rsdmx language list.
 #'
-#' Attempts to extract a localized label from an rsdmx language list, following
-#' a preference order: target language, then first available value, then NA.
-#' Used internally to resolve SDMX dimension code descriptions.
+#' Prefer the requested language, then the first available label.
 #'
 #' @param value List from rsdmx structure (language-keyed).
 #' @param lang Language code ("tr" or "en").
@@ -262,20 +260,13 @@ lookup_first_localized_value <- function(value, lang) {
 
 #' Extract dimension code-to-label mappings from SDMX structure.
 #'
-#' Navigates the rsdmx S4 object structure to extract human-readable labels for
-#' coded dimensions. Used internally to enhance SDMX observations with
-#' \code{*_label} columns. Kept internal to avoid exposing unstable metadata
-#' structure to public API.
+#' Extract human-readable labels for coded SDMX dimensions.
 #'
 #' @param raw_sdmx SDMX structure object from \code{rsdmx::readSDMX()}.
 #' @param lang Language code for label extraction ("tr" or "en").
 #'
 #' @return List where keys are dimension concept references and values are
 #'   named character vectors mapping codes to labels.
-#'
-#' @details
-#' Navigates rsdmx S4 structure using datastructures and codelists slots
-#' to extract dimension-to-codelist mappings and code labels.
 #'
 #' @noRd
 #' @keywords internal

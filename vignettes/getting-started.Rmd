@@ -97,9 +97,9 @@ population_data <- tuikr::statistical_data(
 population_data
 ```
 
-`tuikr::statistical_data()` always returns long-format output. When TUIK
-publishes code-list labels, the package adds adjacent `*_label` columns so you
-can work with readable values without losing the original codes.
+`tuikr::statistical_data()` adds adjacent `*_label` columns when TUIK publishes
+code-list labels, so you can work with readable values without losing the
+original codes.
 
 ## Download a Spreadsheet Table
 
