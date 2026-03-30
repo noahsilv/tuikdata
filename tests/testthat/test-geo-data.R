@@ -4,9 +4,9 @@ test_that("geo_data returns metadata without parameters", {
     "Set RUN_NETWORK_TESTS=true to run network integration tests."
   )
   skip_if_offline()
-  
+
   dt <- geo_data()
-  
+
   expect_s3_class(dt, "tbl_df")
   expect_named(dt, c("var_name", "var_num", "var_levels", "var_period"))
   expect_true("var_name" %in% names(dt))
@@ -350,4 +350,51 @@ test_that("geo_map dataframe = TRUE drops geometry column", {
   expect_false(inherits(nuts3_tbl, "sf"))
   expect_false("geometry" %in% names(nuts3_tbl))
   expect_true("code" %in% names(nuts3_tbl))
+})
+
+test_that("geo_data rejects non-scalar var_level inputs", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(2, 3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      return(side_menu_payload)
+    },
+    .package = "jsonlite"
+  )
+
+  expect_error(
+    geo_data(var_num = "SERIES-1", var_level = c(2, 3)),
+    "var_level must be a single level value of 2, 3, or 4"
+  )
+  expect_error(
+    geo_data(var_num = "SERIES-1", var_level = integer()),
+    "var_level must be a single level value of 2, 3, or 4"
+  )
+})
+
+test_that("geo_map rejects non-scalar level inputs", {
+  expect_error(
+    geo_map(level = c(2, 3)),
+    "level must be a single value of 2, 3, 4, or 9"
+  )
+  expect_error(
+    geo_map(level = integer()),
+    "level must be a single value of 2, 3, 4, or 9"
+  )
 })
