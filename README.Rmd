@@ -80,11 +80,11 @@ head(variables, 3)
 
 # Download data for a specific variable
 population <- geo_data(
-  variable_no = "ADNKS-GK137473-O29001",
-  variable_level = 3,
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
+  var_num = "ADNKS-GK137473-O29001",
+  var_level = 3,
+  var_source = "medas",
+  var_period = "yillik",
+  var_recordnum = 5
 )
 head(population, 3)
 

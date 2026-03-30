@@ -1,6 +1,6 @@
 test_that("geo_data requires all download parameters together", {
   expect_error(
-    geo_data(variable_no = "SNM-GK160951-O33303"),
+    geo_data(var_num = "SNM-GK160951-O33303"),
     "must be provided together"
   )
 })

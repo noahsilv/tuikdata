@@ -32,7 +32,7 @@ Added three comprehensive vignettes to guide users:
 ## Bug Fixes
 
 * Fixed README installation commands (corrected repository name from `emraher/tuik` to `emraher/tuikr`)
-* Fixed `geo_data()` example parameter name (`level` → `variable_level`)
+* Fixed `geo_data()` example parameter name (`level` → `var_level`)
 * Removed deprecated V8 import from `geo_map()` documentation
 * Added comprehensive examples for `geo_data()` showing both metadata and data retrieval modes
 

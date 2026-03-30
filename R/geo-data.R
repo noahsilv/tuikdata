@@ -4,15 +4,15 @@
 #' Can be used in two modes: metadata retrieval (no parameters) or
 #' data download (all five parameters must be provided together).
 #'
-#' @param variable_no Character. Data Series Number (e.g., "SNM-GK160951-O33303").
+#' @param var_num Character. Data Series Number (e.g., "SNM-GK160951-O33303").
 #'   Obtain from metadata mode. Required for data download.
-#' @param variable_level Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
+#' @param var_level Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
 #'   Required for data download.
-#' @param variable_source Character. Data Series Source. Either "medas" or
+#' @param var_source Character. Data Series Source. Either "medas" or
 #'   "ilGostergeleri". Required for data download.
-#' @param variable_period Character. Data Series Period. Either "yillik" (yearly)
+#' @param var_period Character. Data Series Period. Either "yillik" (yearly)
 #'   or "aylik" (monthly). Required for data download.
-#' @param variable_recnum Numeric. Data Series Record Number (3, 5, or 24).
+#' @param var_recordnum Numeric. Data Series Record Number (3, 5, or 24).
 #'   Number of time periods to retrieve. Required for data download.
 #'
 #' @return Returns different structures depending on usage mode:
@@ -43,11 +43,11 @@
 #'
 #' # Get data for a specific variable at NUTS-2 level
 #' geo_data(
-#'   variable_level = 2,
-#'   variable_no = "SNM-GK160951-O33303",
-#'   variable_source = "medas",
-#'   variable_period = "yillik",
-#'   variable_recnum = 5
+#'   var_level = 2,
+#'   var_num = "SNM-GK160951-O33303",
+#'   var_source = "medas",
+#'   var_period = "yillik",
+#'   var_recordnum = 5
 #' )
 #' }
 #'
@@ -55,21 +55,21 @@
 #' \code{\link{geo_map}} for administrative boundary geometries
 #'
 #' @export
-geo_data <- function(variable_no = NULL,
-                     variable_level = NULL,
-                     variable_source = NULL,
-                     variable_period = NULL,
-                     variable_recnum = NULL) {
-  data_params <- list(variable_no, variable_level, variable_source, variable_period, variable_recnum)
+geo_data <- function(var_num = NULL,
+                     var_level = NULL,
+                     var_source = NULL,
+                     var_period = NULL,
+                     var_recordnum = NULL) {
+  data_params <- list(var_num, var_level, var_source, var_period, var_recordnum)
   params_are_null <- purrr::map_lgl(data_params, is.null)
   data_mode <- !all(params_are_null)
 
   if (data_mode) {
     if (any(params_are_null)) {
-      stop("All parameters (variable_no, variable_level, variable_source, variable_period, variable_recnum) must be provided together for data download.")
+      stop("All parameters (var_num, var_level, var_source, var_period, var_recordnum) must be provided together for data download.")
     }
-    if (!(variable_level %in% c(2, 3, 4))) {
-      stop("variable_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1)")
+    if (!(var_level %in% c(2, 3, 4))) {
+      stop("var_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1)")
     }
   }
 
@@ -91,31 +91,31 @@ geo_data <- function(variable_no = NULL,
     var_recordnum = submenu_items |> purrr::map_int(~ .x$kayitSayisi)
   )
 
-  if (is.null(variable_no)) {
+  if (is.null(var_num)) {
     return(variable_dt)
   }
 
-  if (!(variable_no %in% variable_dt$var_num)) {
-    stop("variable_no must match one of the values returned by geo_data().", call. = FALSE)
+  if (!(var_num %in% variable_dt$var_num)) {
+    stop("var_num must match one of the values returned by geo_data().", call. = FALSE)
   }
 
   query_url <- paste0(
-    "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", variable_source,
-    "&duzey=", variable_level,
-    "&gostergeNo=", variable_no,
-    "&kayitSayisi=", variable_recnum,
-    "&period=", variable_period
+    "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", var_source,
+    "&duzey=", var_level,
+    "&gostergeNo=", var_num,
+    "&kayitSayisi=", var_recordnum,
+    "&period=", var_period
   )
 
   geo_json_data <- tryCatch(
     jsonlite::fromJSON(query_url),
     error = function(e) {
-      stop("Data '", variable_no, "' is not available at NUTS level ", variable_level)
+      stop("Data '", var_num, "' is not available at NUTS level ", var_level)
     }
   )
 
   vals_name <- variable_dt |>
-    dplyr::filter(.data$var_num == variable_no) |>
+    dplyr::filter(.data$var_num == var_num) |>
     dplyr::pull(.data$var_name)
 
   dates <- normalize_geo_dates(geo_json_data$tarihler)

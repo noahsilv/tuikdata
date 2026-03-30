@@ -16,13 +16,13 @@ test_that("geo_data returns metadata without parameters", {
 test_that("geo_data validates NUTS level", {
   expect_error(
     geo_data(
-      variable_no = "SNM-GK160951-O33303",
-      variable_level = 5,
-      variable_source = "medas",
-      variable_period = "yillik",
-      variable_recnum = 5
+      var_num = "SNM-GK160951-O33303",
+      var_level = 5,
+      var_source = "medas",
+      var_period = "yillik",
+      var_recordnum = 5
     ),
-    "variable_level must be 2, 3, or 4"
+    "var_level must be 2, 3, or 4"
   )
 })
 

@@ -67,11 +67,11 @@ housing_sales_series$var_levels[[1]]
 
 ```{r geo-download}
 housing_sales <- tuikr::geo_data(
-  variable_no = "INS-GK055-O006",
-  variable_level = 3,
-  variable_source = "ilGostergeleri",
-  variable_period = "yillik",
-  variable_recnum = 5
+  var_num = "INS-GK055-O006",
+  var_level = 3,
+  var_source = "ilGostergeleri",
+  var_period = "yillik",
+  var_recordnum = 5
 ) |>
   dplyr::mutate(
     date = as.integer(date),
@@ -135,7 +135,7 @@ ggplot2::ggplot(housing_sales_map) +
 ## Troubleshooting
 
 If a request fails, go back to the metadata table and inspect `var_levels`
-before changing `variable_level`. Many indicators are not available at every
+before changing `var_level`. Many indicators are not available at every
 geographic level.
 
 If the join produces missing fills, inspect the boundary keys with

@@ -5,27 +5,27 @@
 \title{Get Geographic Data from TUIK}
 \usage{
 geo_data(
-  variable_no = NULL,
-  variable_level = NULL,
-  variable_source = NULL,
-  variable_period = NULL,
-  variable_recnum = NULL
+  var_num = NULL,
+  var_level = NULL,
+  var_source = NULL,
+  var_period = NULL,
+  var_recordnum = NULL
 )
 }
 \arguments{
-\item{variable_no}{Character. Data Series Number (e.g., "SNM-GK160951-O33303").
+\item{var_num}{Character. Data Series Number (e.g., "SNM-GK160951-O33303").
 Obtain from metadata mode. Required for data download.}
 
-\item{variable_level}{Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
+\item{var_level}{Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
 Required for data download.}
 
-\item{variable_source}{Character. Data Series Source. Either "medas" or
+\item{var_source}{Character. Data Series Source. Either "medas" or
 "ilGostergeleri". Required for data download.}
 
-\item{variable_period}{Character. Data Series Period. Either "yillik" (yearly)
+\item{var_period}{Character. Data Series Period. Either "yillik" (yearly)
 or "aylik" (monthly). Required for data download.}
 
-\item{variable_recnum}{Numeric. Data Series Record Number (3, 5, or 24).
+\item{var_recordnum}{Numeric. Data Series Record Number (3, 5, or 24).
 Number of time periods to retrieve. Required for data download.}
 }
 \value{
@@ -62,11 +62,11 @@ geo_data()
 
 # Get data for a specific variable at NUTS-2 level
 geo_data(
-  variable_level = 2,
-  variable_no = "SNM-GK160951-O33303",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
+  var_level = 2,
+  var_num = "SNM-GK160951-O33303",
+  var_source = "medas",
+  var_period = "yillik",
+  var_recordnum = 5
 )
 }
 
