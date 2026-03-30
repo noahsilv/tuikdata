@@ -9,7 +9,8 @@ geo_data(
   var_level = NULL,
   var_source = NULL,
   var_period = NULL,
-  var_recordnum = NULL
+  var_recordnum = NULL,
+  lang = "tr"
 )
 }
 \arguments{
@@ -27,13 +28,16 @@ or "aylik" (monthly). Required for data download.}
 
 \item{var_recordnum}{Numeric. Data Series Record Number (3, 5, or 24).
 Number of time periods to retrieve. Required for data download.}
+
+\item{lang}{Character. Language code. Use \code{"tr"} for Turkish or \code{"en"} for
+English.}
 }
 \value{
 Returns different structures depending on usage mode:
 
 \strong{Metadata mode} (no parameters): A tibble with 6 columns:
 \describe{
-\item{var_name}{Character. Turkish name of the variable}
+\item{var_name}{Character. Variable name in the selected language}
 \item{var_num}{Character. Variable number/code for queries}
 \item{var_levels}{List. Available NUTS levels for this variable}
 \item{var_period}{Character. Time period type ("yillik" or "aylik")}
@@ -45,7 +49,8 @@ Returns different structures depending on usage mode:
 \describe{
 \item{code}{Character. Geographic unit code (NUTS-2, NUTS-3, or LAU-1)}
 \item{date}{Character. Time period (YYYY or YYYY-MM format)}
-\item{variable_name}{Numeric/Character. Values for the requested variable.}
+\item{variable_name}{Numeric/Character. Values for the requested variable.
+The column name uses the selected language when available.}
 }
 }
 \description{
@@ -56,13 +61,17 @@ Retrieve geographic metadata or indicator values from the TUIK geographic portal
 # Get metadata for all available variables
 geo_data()
 
+# Get metadata in English
+geo_data(lang = "en")
+
 # Get data for a specific variable at NUTS-2 level
 geo_data(
   var_level = 2,
   var_num = "SNM-GK160951-O33303",
   var_source = "medas",
   var_period = "yillik",
-  var_recordnum = 5
+  var_recordnum = 5,
+  lang = "en"
 )
 }
 

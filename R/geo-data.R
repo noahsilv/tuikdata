@@ -12,12 +12,14 @@
 #'   or "aylik" (monthly). Required for data download.
 #' @param var_recordnum Numeric. Data Series Record Number (3, 5, or 24).
 #'   Number of time periods to retrieve. Required for data download.
+#' @param lang Character. Language code. Use `"tr"` for Turkish or `"en"` for
+#'   English.
 #'
 #' @return Returns different structures depending on usage mode:
 #'
 #' **Metadata mode** (no parameters): A tibble with 6 columns:
 #' \describe{
-#'   \item{var_name}{Character. Turkish name of the variable}
+#'   \item{var_name}{Character. Variable name in the selected language}
 #'   \item{var_num}{Character. Variable number/code for queries}
 #'   \item{var_levels}{List. Available NUTS levels for this variable}
 #'   \item{var_period}{Character. Time period type ("yillik" or "aylik")}
@@ -29,7 +31,8 @@
 #' \describe{
 #'   \item{code}{Character. Geographic unit code (NUTS-2, NUTS-3, or LAU-1)}
 #'   \item{date}{Character. Time period (YYYY or YYYY-MM format)}
-#'   \item{variable_name}{Numeric/Character. Values for the requested variable.}
+#'   \item{variable_name}{Numeric/Character. Values for the requested variable.
+#'     The column name uses the selected language when available.}
 #' }
 #'
 #' @examples
@@ -37,13 +40,17 @@
 #' # Get metadata for all available variables
 #' geo_data()
 #'
+#' # Get metadata in English
+#' geo_data(lang = "en")
+#'
 #' # Get data for a specific variable at NUTS-2 level
 #' geo_data(
 #'   var_level = 2,
 #'   var_num = "SNM-GK160951-O33303",
 #'   var_source = "medas",
 #'   var_period = "yillik",
-#'   var_recordnum = 5
+#'   var_recordnum = 5,
+#'   lang = "en"
 #' )
 #' }
 #'
@@ -55,10 +62,12 @@ geo_data <- function(var_num = NULL,
                      var_level = NULL,
                      var_source = NULL,
                      var_period = NULL,
-                     var_recordnum = NULL) {
+                     var_recordnum = NULL,
+                     lang = "tr") {
   data_params <- list(var_num, var_level, var_source, var_period, var_recordnum)
   params_are_null <- purrr::map_lgl(data_params, is.null)
   data_mode <- !all(params_are_null)
+  validated_lang <- validate_geo_lang(lang)
 
   if (data_mode) {
     if (any(params_are_null)) {
@@ -79,7 +88,8 @@ geo_data <- function(var_num = NULL,
     purrr::flatten()
 
   variable_dt <- tibble::tibble(
-    var_name = submenu_items |> purrr::map_chr(~ .x$gostergeAdi),
+    var_name = submenu_items |>
+      purrr::map_chr(~ pick_geo_label(.x$gostergeAdi, .x$gostergeAdiEn, validated_lang)),
     var_num = submenu_items |> purrr::map_chr(~ .x$gostergeNo),
     var_levels = submenu_items |> purrr::map(~ .x$duzeyler),
     var_period = submenu_items |> purrr::map_chr(~ .x$period),
@@ -110,17 +120,19 @@ geo_data <- function(var_num = NULL,
     }
   )
 
-  vals_name <- variable_dt |>
-    dplyr::filter(.data$var_num == var_num) |>
-    dplyr::pull(.data$var_name)
+  vals_name <- pick_geo_label(
+    geo_json_data$gosterge_ad,
+    geo_json_data$gosterge_ad_ing,
+    validated_lang
+  )
 
   dates <- normalize_geo_dates(geo_json_data$tarihler)
 
   formatted_data <- geo_json_data$veriler |>
-    tidyr::unnest_wider(col = .data$veri, names_sep = ", ") |>
+    tidyr::unnest_wider(col = "veri", names_sep = ", ") |>
     purrr::set_names(c("code", dates)) |>
     tidyr::pivot_longer(
-      cols = -.data$code,
+      cols = -code,
       names_to = "date",
       values_to = vals_name
     ) |>
@@ -148,4 +160,22 @@ normalize_geo_dates <- function(raw_dates) {
   )
 
   return(normalized_dates)
+}
+
+#' @noRd
+#' @keywords internal
+validate_geo_lang <- function(lang) {
+  return(validate_string_single(lang, "lang", allowed_values = c("tr", "en")))
+}
+
+#' @noRd
+#' @keywords internal
+pick_geo_label <- function(label_tr, label_en, lang) {
+  validated_lang <- validate_geo_lang(lang)
+
+  if (validated_lang == "en" && !is.null(label_en) && !is.na(label_en) && nzchar(label_en)) {
+    return(label_en)
+  }
+
+  return(label_tr)
 }

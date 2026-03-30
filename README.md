@@ -72,13 +72,18 @@ library(tuikr)
 variables <- geo_data()
 head(variables, 3)
 
+# List geographic variables in English
+variables_en <- geo_data(lang = "en")
+head(variables_en, 3)
+
 # Download data for a specific variable
 population <- geo_data(
   var_num = "ADNKS-GK137473-O29001",
   var_level = 3,
   var_source = "medas",
   var_period = "yillik",
-  var_recordnum = 5
+  var_recordnum = 5,
+  lang = "en"
 )
 head(population, 3)
 
