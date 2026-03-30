@@ -44,7 +44,9 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
 ### Code Style & Patterns
 
 - **R Style**: tidyverse conventions, 2-space indentation, 120-char line limit (`.lintr` config)
-- **Pipes**: Uses `%>%` from magrittr
+- **Pipes**: Uses native `|>` pipe (R 4.1+), not legacy `%>%`
+- **Returns**: Functions use implicit returns (last expression is returned automatically), not explicit `return()`
+- **Slicing**: Uses `dplyr::slice_head(n = 1)` instead of `dplyr::slice(1)` for explicit intent
 - **Non-standard evaluation**: Uses `.data$` pronoun (e.g., `.data$theme_id`)
 - **Documentation**: Roxygen2 with markdown (RoxygenNote: 7.3.3)
 - **Conditional logic**: Prefers `dplyr::case_when()`
@@ -186,6 +188,47 @@ Vignettes are built and deployed with pkgdown.
 - **Theme**: eerdown (custom theme, configured in `_pkgdown.yml`)
 - **Citation**: CFF v1.2.0 format in `CITATION.cff`
 
+## Modern R Development Practices
+
+This codebase follows **r-development skill** patterns for modern tidyverse development:
+
+### Key Patterns
+
+**Native Pipe (`|>` not `%>%`)**: All code uses R 4.1+ native pipe
+```r
+data |>
+  filter(year >= 2020) |>
+  summarise(mean_value = mean(value))
+```
+
+**Implicit Returns**: Functions return the last expression automatically
+```r
+# ✓ Modern style
+my_function <- function(x) {
+  x |>
+    dplyr::filter(condition) |>
+    dplyr::mutate(new_col = x * 2)
+}
+
+# ✗ Outdated
+my_function <- function(x) {
+  result <- x |> filter(condition) |> mutate(new_col = x * 2)
+  return(result)
+}
+```
+
+**Explicit Intent with `slice_head()`**: Use `slice_head(n = 1)` instead of `slice(1)`
+```r
+data |>
+  dplyr::filter(var_num == selected) |>
+  dplyr::slice_head(n = 1)  # Clear: get the first row
+```
+
+**NSE with `.data` Pronoun**: Always use `.data$` for column references in data-masking contexts
+```r
+dplyr::filter(.data$var_num == .env$selected_var_num)
+```
+
 ## Quick Development Workflow
 
 1. **Make changes to R files in `R/`**
@@ -194,3 +237,31 @@ Vignettes are built and deployed with pkgdown.
 4. **Full check**: `devtools::check()` (catches documentation, examples, warnings)
 5. **Lint**: `lintr::lint_package()` (enforces 120-char line limit and style)
 6. **Push**: GitHub Actions runs full R-CMD-check on multiple platforms
+
+## Claude Code Automation Recommendations
+
+When working on tuikr, consider using these Claude Code features:
+
+### Skills
+
+- **`r-skill:r-development`**: Modern R/tidyverse patterns (native pipes, implicit returns, `.by` parameter)
+  - Use before implementing features or refactoring R code
+  - Validates adherence to tidyverse best practices
+
+- **`commit-commands:commit`**: Streamlined git commits with proper attribution
+  - Use to create commits with clear messages
+
+### MCP Servers
+
+- **GitHub MCP**: Check PR status, manage issues, read repository context
+  - Install: `claude mcp add github`
+
+### Hooks (Optional)
+
+- **PostToolUse lint**: Auto-run `lintr::lint_file()` after editing R files
+- **PreToolUse protection**: Block accidental edits to DESCRIPTION or lock files
+
+### Subagents
+
+- **code-reviewer**: Parallel code quality review across modified files
+  - Useful for PR preparation before human review
