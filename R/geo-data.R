@@ -95,6 +95,10 @@ geo_data <- function(variable_no = NULL,
     return(variable_dt)
   }
 
+  if (!(variable_no %in% variable_dt$var_num)) {
+    stop("variable_no must match one of the values returned by geo_data().", call. = FALSE)
+  }
+
   query_url <- paste0(
     "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", variable_source,
     "&duzey=", variable_level,
@@ -114,15 +118,7 @@ geo_data <- function(variable_no = NULL,
     dplyr::filter(.data$var_num == variable_no) |>
     dplyr::pull(.data$var_name)
 
-  dates <- if (stringr::str_length(geo_json_data$tarihler[1]) == 6L) {
-    stringr::str_c(
-      stringr::str_sub(geo_json_data$tarihler, 1L, 4L),
-      stringr::str_sub(geo_json_data$tarihler, 5L, 6L),
-      sep = "-"
-    )
-  } else {
-    geo_json_data$tarihler
-  }
+  dates <- normalize_geo_dates(geo_json_data$tarihler)
 
   formatted_data <- geo_json_data$veriler |>
     tidyr::unnest_wider(col = .data$veri, names_sep = ", ") |>
@@ -136,4 +132,24 @@ geo_data <- function(variable_no = NULL,
     dplyr::mutate(code = as.character(.data$code))
 
   return(formatted_data)
+}
+
+#' @noRd
+#' @keywords internal
+normalize_geo_dates <- function(raw_dates) {
+  if (length(raw_dates) == 0) {
+    return(raw_dates)
+  }
+
+  if (stringr::str_length(raw_dates[[1]]) != 6L) {
+    return(raw_dates)
+  }
+
+  normalized_dates <- stringr::str_c(
+    stringr::str_sub(raw_dates, 1L, 4L),
+    stringr::str_sub(raw_dates, 5L, 6L),
+    sep = "-"
+  )
+
+  return(normalized_dates)
 }

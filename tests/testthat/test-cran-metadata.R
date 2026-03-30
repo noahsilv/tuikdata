@@ -9,7 +9,7 @@ test_that("CRAN metadata files contain no placeholders", {
   citation_lines <- readLines(file.path(root, "CITATION.cff"), warn = FALSE)
 
   expect_false(any(grepl("X\\.Y\\.Z|placeholder|replace the placeholders", cran_comment_lines, ignore.case = TRUE)))
-  expect_true(any(grepl("^Title: .*URLs", description_lines)))
+  expect_true(any(grepl("^Title: Access Statistical and Geographic Data from TUIK$", description_lines)))
   expect_true(any(grepl("^BugReports: https://github.com/emraher/tuikr/issues$", description_lines)))
-  expect_true(any(grepl('^title: "tuikr: .*URLs.*"$', citation_lines)))
+  expect_true(any(grepl('^title: "tuikr: Access Statistical and Geographic Data from TUIK"$', citation_lines)))
 })

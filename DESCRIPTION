@@ -1,10 +1,11 @@
 Package: tuikr
-Title: Download Data Files and Database URLs from TUIK
+Title: Access Statistical and Geographic Data from TUIK
 Version: 0.1.0
 Authors@R:
     person("Emrah", "Er", email = "eer@eremrah.com", role = c("aut", "cre"))
 Description: Accesses Turkish Statistical Institute (TUIK) statistical tables,
-    database links, and geographic data through the public TUIK web portals.
+    portal resources, SDMX dataflows, and geographic data through the public
+    TUIK web portals.
 License: MIT + file LICENSE
 URL: https://github.com/emraher/tuikr, https://eremrah.com/tuikr/
 BugReports: https://github.com/emraher/tuikr/issues
@@ -17,7 +18,6 @@ Depends:
     R (>= 4.1.0)
 Imports:
     rlang (>= 0.1.2),
-    crayon,
     crul,
     dplyr,
     purrr,

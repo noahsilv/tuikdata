@@ -47,6 +47,23 @@ validate_statistical_lang <- function(lang) {
 
 #' @noRd
 #' @keywords internal
+format_valid_theme_choices <- function(theme_tree) {
+  valid_theme_table <- tibble::tibble(
+    theme_name = purrr::map_chr(theme_tree, "name"),
+    theme_id = purrr::map_chr(theme_tree, ~ as.character(.x[["id"]]))
+  )
+
+  formatted_choices <- paste0(
+    valid_theme_table$theme_id,
+    " = ",
+    valid_theme_table$theme_name
+  )
+
+  return(paste(formatted_choices, collapse = "\n"))
+}
+
+#' @noRd
+#' @keywords internal
 split_dataflow_id <- function(dataflow_id) {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   dataflow_parts <- strsplit(validated_dataflow_id, ",", fixed = TRUE)[[1]]
@@ -589,21 +606,22 @@ build_statistical_resource_tibble <- function(theme_node) {
 #' @noRd
 #' @keywords internal
 validate_theme <- function(theme, theme_tree) {
+  if (length(theme) != 1 || is.na(theme)) {
+    stop("theme must be a single theme ID.", call. = FALSE)
+  }
+
   theme_id_chr <- as.character(theme)
   top_level_ids <- purrr::map_chr(theme_tree, ~ as.character(.x[["id"]]))
 
-  if (length(theme) != 1 || !(theme_id_chr %in% top_level_ids)) {
-    sthemes_tbl <- tibble::tibble(
-      theme_name = purrr::map_chr(theme_tree, "name"),
-      theme_id   = top_level_ids
+  if (!(theme_id_chr %in% top_level_ids)) {
+    stop(
+      paste(
+        "theme must be one of the available theme IDs:",
+        format_valid_theme_choices(theme_tree),
+        sep = "\n"
+      ),
+      call. = FALSE
     )
-    message(crayon::blue("Valid themes and IDs are:"))
-    print(sthemes_tbl)
-    if (length(theme) != 1) {
-      stop(crayon::red("You can select only one theme!"))
-    } else {
-      stop(crayon::red("You should select a valid theme ID!"))
-    }
   }
 
   theme_idx <- which(top_level_ids == theme_id_chr)

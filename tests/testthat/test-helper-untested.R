@@ -118,3 +118,27 @@ test_that("normalize_statistical_url passes through http:// URLs unchanged", {
   http_url <- "http://veriportali.tuik.gov.tr/data"
   expect_equal(tuikr:::normalize_statistical_url(http_url), http_url)
 })
+
+test_that("format_valid_theme_choices returns plain text theme listings", {
+  theme_tree <- list(
+    list(id = 1, name = "Justice and Elections"),
+    list(id = 11, name = "Population and Demography")
+  )
+
+  formatted_choices <- tuikr:::format_valid_theme_choices(theme_tree)
+
+  expect_match(formatted_choices, "1 = Justice and Elections", fixed = TRUE)
+  expect_match(formatted_choices, "11 = Population and Demography", fixed = TRUE)
+})
+
+test_that("normalize_geo_dates formats monthly dates and preserves yearly dates", {
+  expect_equal(
+    tuikr:::normalize_geo_dates(c("202401", "202402")),
+    c("2024-01", "2024-02")
+  )
+  expect_equal(
+    tuikr:::normalize_geo_dates(c("2023", "2024")),
+    c("2023", "2024")
+  )
+  expect_equal(tuikr:::normalize_geo_dates(character(0)), character(0))
+})
