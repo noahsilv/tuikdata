@@ -21,7 +21,7 @@ test_that("statistical_resources validates supported resource types", {
 
 test_that("statistical_resources reports valid theme IDs for unknown themes", {
   testthat::local_mocked_bindings(
-    fetch_theme_tree = function(lang = "tr") {
+    fetch_theme_tree = function(lang = "en") {
       return(list(
         list(id = 1, name = "Justice and Elections", children = list()),
         list(id = 11, name = "Population and Demography", children = list())

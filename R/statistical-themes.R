@@ -8,8 +8,8 @@
 #' \code{dataflow_id} values, then pass those identifiers to
 #' \code{\link{statistical_data}}.
 #'
-#' @param lang Character string. Portal language code. Default \code{"tr"} for
-#'   Turkish. Use \code{"en"} for English.
+#' @param lang Character string. Portal language code. Default \code{"en"} for
+#'   English. Use \code{"tr"} for Turkish.
 #'
 #' @return A tibble with 2 columns:
 #' \describe{
@@ -27,7 +27,7 @@
 #' \code{\link{statistical_databases}}, \code{\link{statistical_data}}
 #'
 #' @export
-statistical_themes <- function(lang = "tr") {
+statistical_themes <- function(lang = "en") {
   theme_list <- fetch_theme_tree(lang)
   return(tibble::tibble(
     theme_name = purrr::map_chr(theme_list, "name"),

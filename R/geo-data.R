@@ -12,8 +12,8 @@
 #'   or "aylik" (monthly). Required for data download.
 #' @param var_recordnum Numeric. Data Series Record Number (3, 5, or 24).
 #'   Number of time periods to retrieve. Required for data download.
-#' @param lang Character. Language code. Use `"tr"` for Turkish or `"en"` for
-#'   English.
+#' @param lang Character. Language code. Use `"en"` for English or `"tr"` for
+#'   Turkish.
 #'
 #' @return Returns different structures depending on usage mode:
 #'
@@ -40,8 +40,8 @@
 #' # Get metadata for all available variables
 #' geo_data()
 #'
-#' # Get metadata in English
-#' geo_data(lang = "en")
+#' # Get metadata in Turkish
+#' geo_data(lang = "tr")
 #'
 #' # Get data for a specific variable at NUTS-2 level
 #' geo_data(
@@ -50,7 +50,7 @@
 #'   var_source = "medas",
 #'   var_period = "yillik",
 #'   var_recordnum = 5,
-#'   lang = "en"
+#'   lang = "tr"
 #' )
 #' }
 #'
@@ -63,7 +63,7 @@ geo_data <- function(var_num = NULL,
                      var_source = NULL,
                      var_period = NULL,
                      var_recordnum = NULL,
-                     lang = "tr") {
+                     lang = "en") {
   data_params <- list(var_num, var_level, var_source, var_period, var_recordnum)
   params_are_null <- purrr::map_lgl(data_params, is.null)
   data_mode <- !all(params_are_null)

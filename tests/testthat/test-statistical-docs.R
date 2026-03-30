@@ -100,17 +100,17 @@ test_that("statistical docs describe the rewritten JSON and SDMX interface", {
   expect_true(any(grepl("dataflow_id", themes_r_lines, fixed = TRUE)))
   expect_true(any(grepl("statistical_resources", themes_r_lines, fixed = TRUE)))
 
-  expect_true(any(grepl('statistical_resources\\(theme, type = NULL, lang = "tr"\\)', resources_rd_lines)))
+  expect_true(any(grepl('statistical_resources\\(theme, type = NULL, lang = "en"\\)', resources_rd_lines)))
   expect_true(any(grepl("\\\\item\\{resource_type\\}", resources_rd_lines)))
   expect_true(any(grepl("\\\\item\\{resource_url\\}", resources_rd_lines)))
 
-  expect_true(any(grepl('statistical_tables(theme, lang = "tr")', tables_rd_lines, fixed = TRUE)))
+  expect_true(any(grepl('statistical_tables(theme, lang = "en")', tables_rd_lines, fixed = TRUE)))
   expect_true(any(grepl("\\\\item\\{node_type\\}", tables_rd_lines)))
   expect_true(any(grepl("\\\\item\\{table_url\\}", tables_rd_lines)))
   expect_false(any(grepl("\\\\item\\{data_name\\}", tables_rd_lines)))
 
-  expect_true(any(grepl('statistical_databases(theme, lang = "tr")', databases_rd_lines, fixed = TRUE)))
+  expect_true(any(grepl('statistical_databases(theme, lang = "en")', databases_rd_lines, fixed = TRUE)))
   expect_true(any(grepl("\\\\item\\{db_url\\}", databases_rd_lines)))
 
-  expect_true(any(grepl('statistical_themes(lang = "tr")', themes_rd_lines, fixed = TRUE)))
+  expect_true(any(grepl('statistical_themes(lang = "en")', themes_rd_lines, fixed = TRUE)))
 })

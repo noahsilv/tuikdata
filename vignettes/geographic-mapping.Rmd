@@ -39,7 +39,7 @@ below.
 
 ```{r geo-metadata}
 geo_variable_catalog <- tuikr::geo_data()
-geo_variable_catalog_en <- tuikr::geo_data(lang = "en")
+geo_variable_catalog_tr <- tuikr::geo_data(lang = "tr")
 
 housing_sales_series <- geo_variable_catalog |>
   dplyr::filter(var_num == "INS-GK055-O006")
@@ -54,12 +54,12 @@ housing_sales_series |>
     var_recordnum
   )
 
-geo_variable_catalog_en |>
+geo_variable_catalog_tr |>
   dplyr::filter(var_num == "INS-GK055-O006") |>
   dplyr::select(var_name, var_num)
 ```
 
-Use `lang = "en"` if you want English indicator names in the metadata table or
+Use `lang = "tr"` if you want Turkish indicator names in the metadata table or
 in the downloaded value column.
 
 `var_levels` is a list-column. Pull the first element to see the supported

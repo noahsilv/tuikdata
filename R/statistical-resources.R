@@ -11,8 +11,8 @@
 #'   Supported values are \code{"dataflow"}, \code{"istab"},
 #'   \code{"database"}, \code{"press"}, and \code{"report"}. Default
 #'   \code{NULL} returns all supported resources for the theme.
-#' @param lang Character string. Portal language code. Default \code{"tr"} for
-#'   Turkish. Use \code{"en"} for English.
+#' @param lang Character string. Portal language code. Default \code{"en"} for
+#'   English. Use \code{"tr"} for Turkish.
 #'
 #' @return A tibble with 6 columns:
 #' \describe{
@@ -52,7 +52,7 @@
 #' \code{\link{statistical_data}} to download SDMX observations
 #'
 #' @export
-statistical_resources <- function(theme, type = NULL, lang = "tr") {
+statistical_resources <- function(theme, type = NULL, lang = "en") {
   validated_type <- validate_statistical_resource_types(type)
   theme_tree <- fetch_theme_tree(lang)
   theme_node <- validate_theme(theme, theme_tree)

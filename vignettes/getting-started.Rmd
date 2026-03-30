@@ -35,7 +35,7 @@ portal expects.
 Start with the theme catalog and locate the Population and Demography folder:
 
 ```{r themes}
-theme_catalog <- tuikr::statistical_themes(lang = "en")
+theme_catalog <- tuikr::statistical_themes()
 
 theme_catalog |>
   dplyr::filter(theme_id == "11")
@@ -48,7 +48,7 @@ downloads for the same theme. The `node_type` column tells you which path you
 are looking at.
 
 ```{r tables}
-population_tables <- tuikr::statistical_tables("11", lang = "en")
+population_tables <- tuikr::statistical_tables("11")
 
 population_tables |>
   dplyr::count(node_type)
@@ -66,7 +66,7 @@ The legacy database URLs are still useful for manual browsing, even though they
 are not the main programmatic download path.
 
 ```{r databases}
-population_databases <- tuikr::statistical_databases("11", lang = "en")
+population_databases <- tuikr::statistical_databases("11")
 
 population_databases |>
   dplyr::select(db_name, db_url) |>
@@ -90,8 +90,7 @@ age_dependency_flow <- population_tables |>
 population_data <- tuikr::statistical_data(
   dataflow_id = age_dependency_flow$dataflow_id[[1]],
   start = "2020",
-  end = "2023",
-  lang = "en"
+  end = "2023"
 )
 
 population_data
@@ -171,7 +170,7 @@ Use `tuikr::statistical_resources()` when you want one table of all supported
 resource types for a theme.
 
 ```{r resources}
-population_resources <- tuikr::statistical_resources("11", lang = "en")
+population_resources <- tuikr::statistical_resources("11")
 
 population_resources |>
   dplyr::count(resource_type)

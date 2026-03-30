@@ -57,6 +57,37 @@ test_that("geo_data returns English metadata names when lang = 'en'", {
   expect_equal(english_metadata$var_name, "Female Population")
 })
 
+test_that("geo_data defaults to English metadata names", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Kadin Nufusu",
+            gostergeAdiEn = "Female Population",
+            duzeyler = list(2, 3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      return(side_menu_payload)
+    },
+    .package = "jsonlite"
+  )
+
+  default_metadata <- geo_data()
+
+  expect_equal(default_metadata$var_name, "Female Population")
+})
+
 test_that("geo_data uses English series labels when lang = 'en' in data mode", {
   side_menu_payload <- list(
     menu = list(

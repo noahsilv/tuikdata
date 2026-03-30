@@ -11,7 +11,7 @@ statistical_data(
   end = NULL,
   detail = "full",
   dimension_at_observation = "TIME_PERIOD",
-  lang = "tr"
+  lang = "en"
 )
 }
 \arguments{
@@ -30,8 +30,8 @@ statistical_data(
 \code{"TIME_PERIOD"}.}
 
 \item{lang}{Character string. Language for human-readable label columns
-derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
-English labels when available.}
+derived from SDMX metadata. Default \code{"en"}. Use \code{"tr"} for
+Turkish labels.}
 }
 \value{
 A tibble with trimmed character columns, invariant dimensions removed,

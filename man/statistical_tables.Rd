@@ -4,15 +4,15 @@
 \alias{statistical_tables}
 \title{Get Statistical Tables for a Theme from TUIK}
 \usage{
-statistical_tables(theme, lang = "tr")
+statistical_tables(theme, lang = "en")
 }
 \arguments{
 \item{theme}{Character or numeric. A single theme ID (e.g., \code{"11"} or
 \code{11}). Only one theme can be queried at a time. Invalid or multiple
 theme IDs return an error with a list of valid themes.}
 
-\item{lang}{Character string. Portal language code. Default \code{"tr"} for
-Turkish. Use \code{"en"} for English.}
+\item{lang}{Character string. Portal language code. Default \code{"en"} for
+English. Use \code{"tr"} for Turkish.}
 }
 \value{
 A tibble with 6 columns:

@@ -4,11 +4,11 @@
 \alias{statistical_themes}
 \title{Get Statistical Themes from TUIK}
 \usage{
-statistical_themes(lang = "tr")
+statistical_themes(lang = "en")
 }
 \arguments{
-\item{lang}{Character string. Portal language code. Default \code{"tr"} for
-Turkish. Use \code{"en"} for English.}
+\item{lang}{Character string. Portal language code. Default \code{"en"} for
+English. Use \code{"tr"} for Turkish.}
 }
 \value{
 A tibble with 2 columns:

@@ -11,8 +11,8 @@
 #' @param dimension_at_observation Character string. Default
 #'   \code{"TIME_PERIOD"}.
 #' @param lang Character string. Language for human-readable label columns
-#'   derived from SDMX metadata. Default \code{"tr"}. Use \code{"en"} for
-#'   English labels when available.
+#'   derived from SDMX metadata. Default \code{"en"}. Use \code{"tr"} for
+#'   Turkish labels.
 #'
 #' @return A tibble with trimmed character columns, invariant dimensions
 #'   removed, and \code{*_label} columns added for coded dimensions when
@@ -36,8 +36,8 @@
 #'   key = "TR....../ALL"
 #' )
 #'
-#' # Download English labels for dimensions (if available)
-#' statistical_data("TR,DF_ADNKS_T26,1.0", lang = "en")
+#' # Download Turkish labels for dimensions
+#' statistical_data("TR,DF_ADNKS_T26,1.0", lang = "tr")
 #' }
 #'
 #' @seealso
@@ -51,7 +51,7 @@ statistical_data <- function(dataflow_id,
                              end = NULL,
                              detail = "full",
                              dimension_at_observation = "TIME_PERIOD",
-                             lang = "tr") {
+                             lang = "en") {
   validated_dataflow_id <- validate_dataflow_id(dataflow_id)
   validate_statistical_sdmx_key(key)
   validate_statistical_sdmx_optional_text(start, "start")

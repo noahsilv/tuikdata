@@ -66,6 +66,23 @@ test_that("build_statistical_portal_request derives URLs and language headers", 
   )
 })
 
+test_that("build_statistical_portal_request defaults to English", {
+  request_info <- tuikr:::build_statistical_portal_request()
+
+  expect_equal(
+    request_info$page_url,
+    "https://veriportali.tuik.gov.tr/en/statistical-themes"
+  )
+  expect_equal(
+    request_info$api_url,
+    "https://veriportali.tuik.gov.tr/api/en/data/statistical-themes"
+  )
+  expect_equal(
+    request_info$headers[["Accept-Language"]],
+    "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  )
+})
+
 test_that("build_statistical_portal_request rejects unsupported languages", {
   expect_error(
     tuikr:::build_statistical_portal_request("de"),
@@ -117,7 +134,7 @@ test_that("build_statistical_resource_tibble maps supported portal resources", {
 
 test_that("statistical_themes stops when fetch_theme_tree errors", {
   testthat::local_mocked_bindings(
-    fetch_theme_tree = function(lang = "tr") {
+    fetch_theme_tree = function(lang = "en") {
       stop("TUIK API returned an error: Service unavailable", call. = FALSE)
     },
     .package = "tuikr"
@@ -127,4 +144,21 @@ test_that("statistical_themes stops when fetch_theme_tree errors", {
     statistical_themes(),
     "TUIK API returned an error"
   )
+})
+
+test_that("statistical_themes defaults to English", {
+  observed_lang <- NULL
+
+  testthat::local_mocked_bindings(
+    fetch_theme_tree = function(lang = "en") {
+      observed_lang <<- lang
+      return(theme_tree_fixture)
+    },
+    .package = "tuikr"
+  )
+
+  themes <- statistical_themes()
+
+  expect_equal(observed_lang, "en")
+  expect_s3_class(themes, "tbl_df")
 })

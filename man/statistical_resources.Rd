@@ -4,7 +4,7 @@
 \alias{statistical_resources}
 \title{Get Statistical Resources for a Theme from TUIK}
 \usage{
-statistical_resources(theme, type = NULL, lang = "tr")
+statistical_resources(theme, type = NULL, lang = "en")
 }
 \arguments{
 \item{theme}{Character or numeric. A single theme ID (e.g., \code{"11"} or
@@ -16,8 +16,8 @@ Supported values are \code{"dataflow"}, \code{"istab"},
 \code{"database"}, \code{"press"}, and \code{"report"}. Default
 \code{NULL} returns all supported resources for the theme.}
 
-\item{lang}{Character string. Portal language code. Default \code{"tr"} for
-Turkish. Use \code{"en"} for English.}
+\item{lang}{Character string. Portal language code. Default \code{"en"} for
+English. Use \code{"tr"} for Turkish.}
 }
 \value{
 A tibble with 6 columns:

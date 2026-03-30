@@ -22,7 +22,7 @@ test_that("statistical_data adds label columns for coded dimensions", {
                                           references = "Descendants") {
       return(list(raw_sdmx = list()))
     },
-    extract_sdmx_dimension_label_maps = function(raw_sdmx, lang = "tr") {
+    extract_sdmx_dimension_label_maps = function(raw_sdmx, lang = "en") {
       return(list(
         ADNKS_GOSTERGE = c(
           COCUK_BAG_ORAN = "Child dependency ratio % (0-14 years)",
@@ -34,7 +34,7 @@ test_that("statistical_data adds label columns for coded dimensions", {
     .package = "tuikr"
   )
 
-  long_data <- statistical_data("TR,DF_ADNKS_ORAN,1.0", lang = "en")
+  long_data <- statistical_data("TR,DF_ADNKS_ORAN,1.0")
 
   expect_named(
     long_data,

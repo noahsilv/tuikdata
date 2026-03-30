@@ -10,7 +10,7 @@ geo_data(
   var_source = NULL,
   var_period = NULL,
   var_recordnum = NULL,
-  lang = "tr"
+  lang = "en"
 )
 }
 \arguments{
@@ -29,8 +29,8 @@ or "aylik" (monthly). Required for data download.}
 \item{var_recordnum}{Numeric. Data Series Record Number (3, 5, or 24).
 Number of time periods to retrieve. Required for data download.}
 
-\item{lang}{Character. Language code. Use \code{"tr"} for Turkish or \code{"en"} for
-English.}
+\item{lang}{Character. Language code. Use \code{"en"} for English or \code{"tr"} for
+Turkish.}
 }
 \value{
 Returns different structures depending on usage mode:
@@ -61,8 +61,8 @@ Retrieve geographic metadata or indicator values from the TUIK geographic portal
 # Get metadata for all available variables
 geo_data()
 
-# Get metadata in English
-geo_data(lang = "en")
+# Get metadata in Turkish
+geo_data(lang = "tr")
 
 # Get data for a specific variable at NUTS-2 level
 geo_data(
@@ -71,7 +71,7 @@ geo_data(
   var_source = "medas",
   var_period = "yillik",
   var_recordnum = 5,
-  lang = "en"
+  lang = "tr"
 )
 }
 

@@ -270,7 +270,7 @@ lookup_first_localized_value <- function(value, lang) {
 #'
 #' @noRd
 #' @keywords internal
-extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "tr") {
+extract_sdmx_dimension_label_maps <- function(raw_sdmx, lang = "en") {
   validated_lang <- validate_statistical_lang(lang)
   sdmx_dimensions <- raw_sdmx@datastructures@datastructures[[1]]@Components@Dimensions
   sdmx_codelists <- raw_sdmx@codelists@codelists
@@ -333,7 +333,7 @@ apply_dimension_label_map <- function(values, dimension_name, label_maps) {
 
 #' @noRd
 #' @keywords internal
-build_statistical_portal_request <- function(lang = "tr") {
+build_statistical_portal_request <- function(lang = "en") {
   validated_lang <- validate_statistical_lang(lang)
 
   accept_language <- switch(
@@ -375,7 +375,7 @@ build_statistical_portal_request <- function(lang = "tr") {
 #'
 #' @noRd
 #' @keywords internal
-fetch_theme_tree <- function(lang = "tr") {
+fetch_theme_tree <- function(lang = "en") {
   request_info <- build_statistical_portal_request(lang)
 
   cookie_file <- tempfile(fileext = ".txt")
