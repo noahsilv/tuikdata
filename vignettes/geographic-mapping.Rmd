@@ -63,7 +63,8 @@ Use `lang = "tr"` if you want Turkish indicator names in the metadata table or
 in the downloaded value column.
 
 `var_levels` is a list-column. Pull the first element to see the supported
-levels for this series.
+levels for this series. Use `var_level` only when a series is available at
+more than one level.
 
 ```{r geo-levels}
 housing_sales_series$var_levels[[1]]
@@ -76,10 +77,7 @@ housing_sales_series$var_levels[[1]]
 ```{r geo-download}
 housing_sales <- tuikr::geo_data(
   var_num = "INS-GK055-O006",
-  var_level = 3,
-  var_source = "ilGostergeleri",
-  var_period = "yillik",
-  var_recordnum = 5
+  var_level = 3
 ) |>
   dplyr::mutate(
     date = as.integer(date),

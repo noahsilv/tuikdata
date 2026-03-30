@@ -4,14 +4,8 @@
 #'
 #' @param var_num Character. Data Series Number (e.g., "SNM-GK160951-O33303").
 #'   Obtain from metadata mode. Required for data download.
-#' @param var_level Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
-#'   Required for data download.
-#' @param var_source Character. Data Series Source. Either "medas" or
-#'   "ilGostergeleri". Required for data download.
-#' @param var_period Character. Data Series Period. Either "yillik" (yearly)
-#'   or "aylik" (monthly). Required for data download.
-#' @param var_recordnum Numeric. Data Series Record Number (3, 5, or 24).
-#'   Number of time periods to retrieve. Required for data download.
+#' @param var_level Numeric or \code{NULL}. NUTS level for the download.
+#'   Optional when the selected series is available at only one level.
 #' @param lang Character. Language code. Use `"en"` for English or `"tr"` for
 #'   Turkish.
 #'
@@ -43,13 +37,10 @@
 #' # Get metadata in Turkish
 #' geo_data(lang = "tr")
 #'
-#' # Get data for a specific variable at NUTS-2 level
+#' # Get data for a specific variable
 #' geo_data(
-#'   var_level = 2,
 #'   var_num = "SNM-GK160951-O33303",
-#'   var_source = "medas",
-#'   var_period = "yillik",
-#'   var_recordnum = 5,
+#'   var_level = 2,
 #'   lang = "tr"
 #' )
 #' }
@@ -60,20 +51,15 @@
 #' @export
 geo_data <- function(var_num = NULL,
                      var_level = NULL,
-                     var_source = NULL,
-                     var_period = NULL,
-                     var_recordnum = NULL,
                      lang = "en") {
-  data_params <- list(var_num, var_level, var_source, var_period, var_recordnum)
-  params_are_null <- purrr::map_lgl(data_params, is.null)
-  data_mode <- !all(params_are_null)
+  data_mode <- !is.null(var_num) || !is.null(var_level)
   validated_lang <- validate_geo_lang(lang)
 
   if (data_mode) {
-    if (any(params_are_null)) {
-      stop("All parameters (var_num, var_level, var_source, var_period, var_recordnum) must be provided together for data download.")
+    if (is.null(var_num)) {
+      stop("var_num is required for data download.", call. = FALSE)
     }
-    if (!(var_level %in% c(2, 3, 4))) {
+    if (!is.null(var_level) && !(var_level %in% c(2, 3, 4))) {
       stop("var_level must be 2, 3, or 4 (NUTS-2, NUTS-3, or LAU-1)")
     }
   }
@@ -105,6 +91,42 @@ geo_data <- function(var_num = NULL,
     stop("var_num must match one of the values returned by geo_data().", call. = FALSE)
   }
 
+  series_metadata <- variable_dt |>
+    dplyr::filter(.data$var_num == var_num) |>
+    dplyr::slice(1)
+
+  available_levels <- sort(unique(unlist(series_metadata$var_levels[[1]])))
+
+  if (is.null(var_level)) {
+    if (length(available_levels) == 1) {
+      var_level <- available_levels[[1]]
+    } else {
+      stop(
+        paste0(
+          "var_level is required for ", var_num,
+          ". Valid levels: ",
+          paste(available_levels, collapse = ", ")
+        ),
+        call. = FALSE
+      )
+    }
+  }
+
+  if (!(var_level %in% available_levels)) {
+    stop(
+      paste0(
+        "var_level must be one of the available levels for ", var_num,
+        ": ",
+        paste(available_levels, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  var_source <- series_metadata$var_source[[1]]
+  var_period <- series_metadata$var_period[[1]]
+  var_recordnum <- series_metadata$var_recordnum[[1]]
+
   query_url <- paste0(
     "https://cip.tuik.gov.tr/Home/GetMapData?kaynak=", var_source,
     "&duzey=", var_level,
@@ -120,11 +142,7 @@ geo_data <- function(var_num = NULL,
     }
   )
 
-  vals_name <- pick_geo_label(
-    geo_json_data$gosterge_ad,
-    geo_json_data$gosterge_ad_ing,
-    validated_lang
-  )
+  vals_name <- pick_geo_label(geo_json_data$gosterge_ad, geo_json_data$gosterge_ad_ing, validated_lang)
 
   dates <- normalize_geo_dates(geo_json_data$tarihler)
 

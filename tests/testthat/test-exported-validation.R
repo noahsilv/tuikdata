@@ -1,7 +1,32 @@
-test_that("geo_data requires all download parameters together", {
+test_that("geo_data requires var_level when a series supports multiple levels", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(2, 3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      return(side_menu_payload)
+    },
+    .package = "jsonlite"
+  )
+
   expect_error(
-    geo_data(var_num = "SNM-GK160951-O33303"),
-    "must be provided together"
+    geo_data(var_num = "SERIES-1"),
+    "var_level is required"
   )
 })
 

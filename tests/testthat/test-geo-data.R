@@ -17,10 +17,7 @@ test_that("geo_data validates NUTS level", {
   expect_error(
     geo_data(
       var_num = "SNM-GK160951-O33303",
-      var_level = 5,
-      var_source = "medas",
-      var_period = "yillik",
-      var_recordnum = 5
+      var_level = 5
     ),
     "var_level must be 2, 3, or 4"
   )
@@ -137,14 +134,101 @@ test_that("geo_data uses English series labels when lang = 'en' in data mode", {
   english_data <- geo_data(
     var_num = "SERIES-1",
     var_level = 3,
-    var_source = "medas",
-    var_period = "yillik",
-    var_recordnum = 5,
     lang = "en"
   )
 
   expect_true("female_population" %in% names(english_data))
   expect_false("kadin_nufusu" %in% names(english_data))
+})
+
+test_that("geo_data derives request parameters from metadata", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(3),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  observed_urls <- character(0)
+
+  geo_data_payload <- list(
+    gostergeNo = "SERIES-1",
+    gosterge_ad = "Toplam Nufus",
+    gosterge_ad_ing = "Total Population",
+    period = "yillik",
+    ondalikHassasiyet = "0",
+    metaVeriURL = "https://example.com/meta",
+    tarihler = c("2025"),
+    veriler = tibble::tibble(
+      duzeyKodu = "06",
+      veri = list(c("100"))
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      observed_urls <<- c(observed_urls, txt)
+      if (grepl("sideMenu.json", txt, fixed = TRUE)) {
+        return(side_menu_payload)
+      }
+      if (grepl("GetMapData", txt, fixed = TRUE)) {
+        return(geo_data_payload)
+      }
+      stop("Unexpected URL in test: ", txt)
+    },
+    .package = "jsonlite"
+  )
+
+  downloaded_data <- geo_data(var_num = "SERIES-1")
+
+  expect_true(any(grepl("kaynak=medas", observed_urls, fixed = TRUE)))
+  expect_true(any(grepl("kayitSayisi=5", observed_urls, fixed = TRUE)))
+  expect_true(any(grepl("period=yillik", observed_urls, fixed = TRUE)))
+  expect_true(any(grepl("duzey=3", observed_urls, fixed = TRUE)))
+  expect_true("total_population" %in% names(downloaded_data))
+})
+
+test_that("geo_data requires var_level when metadata exposes multiple levels", {
+  side_menu_payload <- list(
+    menu = list(
+      list(
+        subMenu = list(
+          list(
+            gostergeNo = "SERIES-1",
+            gostergeAdi = "Toplam Nufus",
+            gostergeAdiEn = "Total Population",
+            duzeyler = list(2, 3, 4),
+            period = "yillik",
+            kaynak = "medas",
+            kayitSayisi = 5
+          )
+        )
+      )
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    fromJSON = function(txt, simplifyDataFrame = FALSE, ...) {
+      return(side_menu_payload)
+    },
+    .package = "jsonlite"
+  )
+
+  expect_error(
+    geo_data(var_num = "SERIES-1"),
+    "var_level is required for SERIES-1. Valid levels: 2, 3, 4"
+  )
 })
 
 test_that("geo_map dataframe = TRUE drops geometry column", {
