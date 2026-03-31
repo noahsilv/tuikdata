@@ -1,7 +1,11 @@
 test_that("CRAN metadata files contain no placeholders", {
   root <- testthat::test_path("..", "..")
   testthat::skip_if_not(
-    file.exists(file.path(root, "DESCRIPTION")),
+    all(file.exists(
+      file.path(root, "DESCRIPTION"),
+      file.path(root, "cran-comments.md"),
+      file.path(root, "CITATION.cff")
+    )),
     "Source metadata files are not available in installed-package tests."
   )
   description_lines <- readLines(file.path(root, "DESCRIPTION"), warn = FALSE)
