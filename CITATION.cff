@@ -5,8 +5,8 @@ authors:
     given-names: "Emrah"
     email: "eer@eremrah.com"
 title: "tuikr: Access Statistical and Geographic Data from TUIK"
-version: 0.1.0
-date-released: 2026-01-28
+version: 0.2.0
+date-released: 2026-03-31
 url: "https://github.com/emraher/tuikr"
 repository-code: "https://github.com/emraher/tuikr"
 license: MIT
