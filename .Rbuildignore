@@ -26,4 +26,6 @@
 ^README_files$
 ^presentation$
 ^presentation/
+^ai_plans$
+^ai_plans/
 ^tuikr-implementation-plan\.md$

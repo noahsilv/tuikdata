@@ -7,7 +7,7 @@ Description: Accesses Turkish Statistical Institute (TUIK) statistical tables,
     portal resources, SDMX dataflows, and geographic data through the public
     TUIK web portals.
 License: MIT + file LICENSE
-URL: https://github.com/emraher/tuikr, https://eremrah.com/tuikr/
+URL: https://eremrah.com/tuikr/, https://github.com/emraher/tuikr
 BugReports: https://github.com/emraher/tuikr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
