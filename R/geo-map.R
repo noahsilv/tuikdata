@@ -90,7 +90,7 @@ geo_map <- function(level = 2, dataframe = FALSE) {
 
   if (level != 9) {
     dt_sf <- dt_sf |>
-      dplyr::rename(code = .data$duzeyKodu) |>
+      dplyr::rename(code = "duzeyKodu") |>
       dplyr::mutate(code = as.character(.data$code))
   }
 

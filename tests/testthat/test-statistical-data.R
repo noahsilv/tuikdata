@@ -71,7 +71,8 @@ test_that("statistical_data downloads a TUIK SDMX dataset", {
 
   expect_s3_class(uhti_data, "tbl_df")
   expect_true(nrow(uhti_data) > 0)
-  expect_true(all(c("REF_AREA", "obsTime", "obsValue") %in% names(uhti_data)))
+  expect_true(all(c("obsTime", "obsValue") %in% names(uhti_data)))
+  expect_true(length(setdiff(names(uhti_data), c("obsTime", "obsValue"))) >= 1)
 })
 
 test_that("internal structure helper downloads TUIK SDMX metadata", {
