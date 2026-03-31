@@ -4,11 +4,11 @@
 \name{tuikr-package}
 \alias{tuikr}
 \alias{tuikr-package}
-\title{tuikr: Download Data Files and Database URLs from TUIK}
+\title{tuikr: Access Statistical and Geographic Data from TUIK}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Accesses Turkish Statistical Institute (TUIK) statistical tables, database links, and geographic data through the public TUIK web portals.
+Accesses Turkish Statistical Institute (TUIK) statistical tables, portal resources, SDMX dataflows, and geographic data through the public TUIK web portals.
 }
 \seealso{
 Useful links:

@@ -34,9 +34,9 @@ derived from SDMX metadata. Default \code{"en"}. Use \code{"tr"} for
 Turkish labels.}
 }
 \value{
-A tibble with trimmed character columns, invariant dimensions removed,
-and \code{*_label} columns added for coded dimensions when labels are
-available.
+A tibble with trimmed character columns, invariant dimensions
+removed, and \code{*_label} columns added for coded dimensions when
+labels are available.
 }
 \description{
 Download a TUIK SDMX dataset identified by \code{dataflow_id}.
@@ -59,8 +59,8 @@ statistical_data(
   key = "TR....../ALL"
 )
 
-# Download English labels for dimensions (if available)
-statistical_data("TR,DF_ADNKS_T26,1.0", lang = "en")
+# Download Turkish labels for dimensions
+statistical_data("TR,DF_ADNKS_T26,1.0", lang = "tr")
 }
 
 }

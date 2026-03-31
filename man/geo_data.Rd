@@ -4,11 +4,7 @@
 \alias{geo_data}
 \title{Get Geographic Data from TUIK}
 \usage{
-geo_data(
-  var_num = NULL,
-  var_level = NULL,
-  lang = "en"
-)
+geo_data(var_num = NULL, var_level = NULL, lang = "en")
 }
 \arguments{
 \item{var_num}{Character. Data Series Number (e.g., "SNM-GK160951-O33303").

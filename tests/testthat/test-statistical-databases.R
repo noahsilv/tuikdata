@@ -43,8 +43,10 @@ test_that("build_statistical_resource_tibble returns correct db columns from fix
   resource_rows <- tuikr:::build_statistical_resource_tibble(local_theme_tree_fixture[[1]])
   db_rows <- dplyr::filter(resource_rows, .data$resource_type == "database")
 
-  expect_named(db_rows, c("theme_name", "theme_id", "resource_name",
-                           "resource_type", "dataflow_id", "resource_url"))
+  expect_named(
+    db_rows,
+    c("theme_name", "theme_id", "resource_name", "resource_type", "dataflow_id", "resource_url")
+  )
   expect_equal(db_rows$resource_url,
                "https://biruni.tuik.gov.tr/medas/?kn=12&locale=tr")
   expect_true(is.na(db_rows$dataflow_id))

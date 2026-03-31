@@ -160,4 +160,3 @@ test_that("clean_statistical_long_data adds no label cols when label_maps is emp
   expect_named(cleaned_long_data, c("INDICATOR", "REF_AREA", "obsTime", "obsValue"))
   expect_false(any(grepl("_label$", names(cleaned_long_data))))
 })
-
