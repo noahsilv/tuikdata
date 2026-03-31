@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Overview
 
 `tuikr` is an R package for accessing Turkish Statistical Institute (TUIK) data from two distinct portals:
-- **Statistical Data Portal** (`data.tuik.gov.tr`): Themes, tables, databases, SDMX dataflows
+- **Statistical Data Portal** (`veriportali.tuik.gov.tr`): Themes, tables, databases, SDMX dataflows, and portal resources
 - **Geographic Portal** (`cip.tuik.gov.tr`): Spatial data, map boundaries at multiple NUTS levels
 
 The package combines web scraping (statistical data) and JSON APIs (geographic data) to expose unified R functions.
@@ -16,14 +16,14 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
 
 1. **Statistical Data** (web scraping-based):
    - `statistical_themes()`: Scrapes main portal page for available theme list
-   - `statistical_tables(theme)`: Returns SDMX dataflows and file downloads for a theme
+   - `statistical_tables(theme)`: Returns theme tables with `node_type`, `dataflow_id`, and `table_url`
    - `statistical_databases(theme)`: Legacy database URLs
-   - `statistical_data(dataflow_id, key="ALL")`: Downloads specific SDMX dataset
-   - `statistical_resources(theme)`: All portal resources including press releases and reports
+   - `statistical_data(dataflow_id, key = "ALL")`: Downloads SDMX data, drops invariant dimensions, and adds `*_label` columns when labels are available
+   - `statistical_resources(theme)`: Returns all portal resources with `resource_type` and `resource_url`
 
 2. **Geographic Data** (JSON API-based):
    - `geo_data()`: Without params returns variable metadata; with params downloads specific variable data for a level
-   - `geo_map(level)`: Downloads `sf` (simple features) objects for mapping (NUTS-2/3/4 or settlement points)
+   - `geo_map(level, dataframe = FALSE)`: Downloads `sf` objects for mapping, or a plain tibble when `dataframe = TRUE`
    - API endpoints: `cip.tuik.gov.tr/Home/GetMapData` and geometry files in `cip.tuik.gov.tr/assets/geometri/`
 
 ### Geographic Levels Reference
@@ -39,7 +39,8 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
 
 - `make_request(url)`: HTTP POST wrapper using `crul` package
 - `check_theme_id(theme)`: Validates single theme ID, provides colored terminal feedback
-- Data cleaning: Consistent pattern across geo functions (fetch JSON → parse → reshape long → clean names → convert codes to character for joining)
+- Data cleaning: SDMX data is normalized to long form, invariant dimensions are removed, and label columns are appended where available
+- Validation: exported geo helpers reject vector, empty, and `NA` level inputs with package errors before any network call
 
 ### Code Style & Patterns
 
@@ -47,7 +48,7 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
 - **Pipes**: Uses native `|>` pipe (R 4.1+), not legacy `%>%`
 - **Returns**: Functions use implicit returns (last expression is returned automatically), not explicit `return()`
 - **Slicing**: Uses `dplyr::slice_head(n = 1)` instead of `dplyr::slice(1)` for explicit intent
-- **Non-standard evaluation**: Uses `.data$` pronoun (e.g., `.data$theme_id`)
+- **Non-standard evaluation**: Uses `.data$` in data-masking contexts (for example, `mutate()` and `filter()`), but not inside tidyselect helpers like `rename()` or `select()`
 - **Documentation**: Roxygen2 with markdown (RoxygenNote: 7.3.3)
 - **Conditional logic**: Prefers `dplyr::case_when()`
 - **Data structures**: Returns tibbles, not data.frames
@@ -68,7 +69,7 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
 - `covr`: Code coverage
 - `knitr`, `rmarkdown`: Vignettes
 - `pkgdown`: Website documentation
-- `V8`: JavaScript engine (legacy code path - commented out in `geo_map.R`)
+- `V8`: Suggested dependency retained for broader compatibility work, but not used by the current geographic parser
 
 ## Development Commands
 
@@ -88,6 +89,10 @@ devtools::document()
 # Run all tests
 devtools::test()
 
+# Run network-backed integration tests explicitly
+Sys.setenv(RUN_NETWORK_TESTS = "true")
+devtools::test()
+
 # Run specific test file
 testthat::test_file("tests/testthat/test-statistical-themes.R")
 
@@ -95,7 +100,7 @@ testthat::test_file("tests/testthat/test-statistical-themes.R")
 covr::report()
 ```
 
-**Testing patterns**: Tests use `skip_on_cran()` for network-dependent tests and `skip_if_offline()` to handle connectivity issues. Testthat edition 3 configured in DESCRIPTION.
+**Testing patterns**: Network-dependent tests are guarded by `RUN_NETWORK_TESTS` and `skip_if_offline()`. Testthat edition 3 is configured in DESCRIPTION.
 
 ### Package Checking & Building
 
@@ -153,6 +158,7 @@ English is the default language (set in recent refactoring).
 - `key = "ALL"` works for many datasets (default)
 - Some dataflows require narrower keys to constrain dimensions
 - Key format: dimension constraints like `"1.2.3"` for specific values
+- Returned columns vary by dataset because invariant dimensions are dropped after normalization
 
 ### Web Scraping Sensitivities
 
@@ -224,9 +230,14 @@ data |>
   dplyr::slice_head(n = 1)  # Clear: get the first row
 ```
 
-**NSE with `.data` Pronoun**: Always use `.data$` for column references in data-masking contexts
+**NSE with `.data` Pronoun**: Use `.data$` for column references in data-masking contexts only
 ```r
 dplyr::filter(.data$var_num == .env$selected_var_num)
+```
+
+Use string or bare column references in tidyselect contexts:
+```r
+dplyr::rename(code = "duzeyKodu")
 ```
 
 ## Quick Development Workflow
