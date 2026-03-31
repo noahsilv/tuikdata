@@ -4,41 +4,27 @@
 \alias{geo_data}
 \title{Get Geographic Data from TUIK}
 \usage{
-geo_data(
-  variable_no = NULL,
-  variable_level = NULL,
-  variable_source = NULL,
-  variable_period = NULL,
-  variable_recnum = NULL
-)
+geo_data(var_num = NULL, var_level = NULL, lang = "en")
 }
 \arguments{
-\item{variable_no}{Character. Data Series Number (e.g., "SNM-GK160951-O33303").
+\item{var_num}{Character. Data Series Number (e.g., "SNM-GK160951-O33303").
 Obtain from metadata mode. Required for data download.}
 
-\item{variable_level}{Numeric. NUTS Level (2, 3, or 4 for NUTS-2, NUTS-3, or LAU-1).
-Required for data download.}
+\item{var_level}{Numeric or \code{NULL}. NUTS level for the download.
+Optional when the selected series is available at only one level.}
 
-\item{variable_source}{Character. Data Series Source. Either "medas" or
-"ilGostergeleri". Required for data download.}
-
-\item{variable_period}{Character. Data Series Period. Either "yillik" (yearly)
-or "aylik" (monthly). Required for data download.}
-
-\item{variable_recnum}{Numeric. Data Series Record Number (3, 5, or 24).
-Number of time periods to retrieve. Required for data download.}
+\item{lang}{Character. Language code. Use \code{"en"} for English or \code{"tr"} for
+Turkish.}
 }
 \value{
 Returns different structures depending on usage mode:
 
-\strong{Metadata mode} (no parameters): A tibble with 6 columns:
+\strong{Metadata mode} (no parameters): A tibble with 4 columns:
 \describe{
-\item{var_name}{Character. Turkish name of the variable}
+\item{var_name}{Character. Variable name in the selected language}
 \item{var_num}{Character. Variable number/code for queries}
 \item{var_levels}{List. Available NUTS levels for this variable}
 \item{var_period}{Character. Time period type ("yillik" or "aylik")}
-\item{var_source}{Character. Data source ("medas" or "ilGostergeleri")}
-\item{var_recordnum}{Numeric. Number of available time periods}
 }
 
 \strong{Data mode} (all parameters): A tibble with 3+ columns:
@@ -46,28 +32,29 @@ Returns different structures depending on usage mode:
 \item{code}{Character. Geographic unit code (NUTS-2, NUTS-3, or LAU-1)}
 \item{date}{Character. Time period (YYYY or YYYY-MM format)}
 \item{variable_name}{Numeric/Character. Values for the requested variable.
-Column name matches the variable name (snake_case). The actual column
-name will vary depending on the variable requested.}
+The column name uses the selected language when available.}
 }
 }
 \description{
-Retrieves geographic statistical data from the TUIK geographic portal.
-Can be used in two modes: metadata retrieval (no parameters) or
-data download (all five parameters must be provided together).
+Retrieve geographic metadata or indicator values from the TUIK geographic portal.
 }
 \examples{
 \dontrun{
 # Get metadata for all available variables
 geo_data()
 
-# Get data for a specific variable at NUTS-2 level
+# Get metadata in Turkish
+geo_data(lang = "tr")
+
+# Get data for a specific variable
 geo_data(
-  variable_level = 2,
-  variable_no = "SNM-GK160951-O33303",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
+  var_num = "SNM-GK160951-O33303",
+  var_level = 2,
+  lang = "tr"
 )
 }
 
+}
+\seealso{
+\code{\link{geo_map}} for boundary geometries
 }

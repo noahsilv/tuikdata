@@ -1,17 +1,21 @@
 ---
-title: "Geographic Mapping with tuikr"
+title: "Downloading and Plotting Maps with tuikr"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Geographic Mapping with tuikr}
+  %\VignetteIndexEntry{Downloading and Plotting Maps with tuikr}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = TRUE,
+  eval = build_examples,
+  message = FALSE,
+  warning = FALSE,
   fig.width = 8,
   fig.height = 6
 )
@@ -19,367 +23,125 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Access TUIK geographic data: discover variables, download by NUTS level, create choropleth maps.
+`tuikr` returns both the indicator values and the matching geometries needed
+for a map. A typical workflow is:
 
-## Understanding NUTS Levels in Turkey
+1. discover a geographic variable with `tuikr::geo_data()`
+2. confirm the available NUTS levels in `var_levels`
+3. download the values for one level
+4. join them to `tuikr::geo_map()`
+5. plot the result
 
-Turkey's administrative divisions follow the NUTS (Nomenclature of Territorial Units for Statistics) system:
+## Find a Geographic Series
 
-| Level | Turkish Term | English Translation | Count | Example |
-|-------|--------------|---------------------|-------|---------|
-| **NUTS-2** | İstatistiki Bölge | Statistical Region | 26 | İstanbul, Ankara |
-| **NUTS-3** | İl | Province | 81 | İzmir, Antalya |
-| **LAU-1** | İlçe | District | 973 | Kadıköy, Çankaya |
-| **Level 9** | Yerleşim Noktası | Settlement Point | 1,003 | City centers |
+Start in metadata mode and locate the housing-sales series used below.
 
-Levels 2-4 return `MULTIPOLYGON` geometry, level 9 returns `POINT` geometry.
+```{r geo-metadata}
+geo_variable_catalog <- tuikr::geo_data()
+geo_variable_catalog_tr <- tuikr::geo_data(lang = "tr")
 
-## Setup
+housing_sales_series <- geo_variable_catalog |>
+  dplyr::filter(var_num == "INS-GK055-O006")
 
-```{r setup}
-library(tuikr)
-library(tidyverse)
-library(sf)
-```
-
-## Discovering Available Variables
-
-Start by exploring what geographic data is available:
-
-```{r variables}
-# Get all available variables
-variables <- geo_data()
-
-# View the structure
-glimpse(variables)
-
-# Example: Search for education-related data
-variables |>
-  filter(str_detect(var_name, "Okul|Eğitim"))
-```
-
-`geo_data()` without parameters returns variable metadata.
-
-## Downloading Geographic Data
-
-### Basic Download
-
-To download data for a specific variable:
-
-```{r download}
-# Example: Cinema film count at NUTS-3 level
-cinema_data <- geo_data(
-  variable_level = 3,
-  variable_no = "SNM-GK160951-O33303",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-)
-
-head(cinema_data)
-```
-
-### Finding Variable Parameters
-
-Extract parameters from metadata:
-
-```{r params}
-# Find a variable of interest
-var_info <- variables |>
-  filter(var_num == "SNM-GK160951-O33303")
-
-# Extract parameters
-var_info |>
-  select(var_num, var_source, var_period, var_recordnum, var_levels)
-
-# Check available levels
-var_info$var_levels[[1]]  # Returns: c(3, 4)
-```
-
-### Level Availability
-
-Not all variables are available at all NUTS levels. If you request an unavailable level:
-
-```{r level_error, error=TRUE, eval=FALSE}
-geo_data(
-  variable_level = 4,
-  variable_no = "TFE-GK105747-O23001",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-)
-```
-
-## Downloading Map Boundaries
-
-Download spatial boundaries for mapping:
-
-```{r boundaries}
-# NUTS-2 (26 regions)
-nuts2 <- geo_map(2)
-
-# NUTS-3 (81 provinces)
-nuts3 <- geo_map(3)
-
-# LAU-1 (973 districts)
-lau1 <- geo_map(4)
-
-# Settlement points
-settlements <- geo_map(9)
-```
-
-Map objects are `sf` objects with WGS 84 CRS (EPSG:4326).
-
-## Creating Choropleth Maps
-
-### NUTS-2 Example: Chicken Population
-
-```{r nuts2_map}
-# 1. Find the variable
-variables |>
-  filter(var_num == "HYV-GK1696800-O32507")
-
-# 2. Download data for 2023 and 2015
-chicken <- geo_data(
-  variable_level = 2,
-  variable_no = "HYV-GK1696800-O32507",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 20
-) |>
-  filter(date %in% c("2023", "2015")) |>
-  mutate(
-    yumurta_tavugu_sayisi_adet = as.numeric(yumurta_tavugu_sayisi_adet),
-    date = as.numeric(date)
+housing_sales_series |>
+  dplyr::select(
+    var_name,
+    var_num,
+    var_levels,
+    var_period
   )
 
-# 3. Join with spatial data and map
-geo_map(2) |>
-  left_join(chicken, by = "code") |>
-  ggplot() +
-  geom_sf(aes(fill = yumurta_tavugu_sayisi_adet), color = "white") +
-  coord_sf(datum = NA) +
-  scale_fill_viridis_c(option = "plasma") +
-  theme_minimal() +
-  theme(
+geo_variable_catalog_tr |>
+  dplyr::filter(var_num == "INS-GK055-O006") |>
+  dplyr::select(var_name, var_num)
+```
+
+Use `lang = "tr"` to get Turkish indicator names in the metadata table and in
+the downloaded value column.
+
+`var_levels` is a list-column. Pull the first element to inspect the levels
+available for this series. Use `var_level` only when a series is published at
+more than one level.
+
+```{r geo-levels}
+housing_sales_series$var_levels[[1]]
+```
+
+## Download the Values
+
+`INS-GK055-O006` is published at level 3, which is the provincial map.
+
+```{r geo-download}
+housing_sales <- tuikr::geo_data(
+  var_num = "INS-GK055-O006",
+  var_level = 3
+) |>
+  dplyr::mutate(
+    date = as.integer(date),
+    number_of_house_sales_total = as.numeric(number_of_house_sales_total)
+  )
+
+housing_sales |>
+  dplyr::slice_head(n = 8)
+```
+
+## Download the Boundaries
+
+`tuikr::geo_map(3)` returns an `sf` object that is already keyed by the `code`
+column used in `tuikr::geo_data()`.
+
+```{r geo-boundaries}
+province_boundaries <- tuikr::geo_map(3)
+
+province_boundaries |>
+  dplyr::select(code, ad) |>
+  dplyr::slice_head(n = 6)
+```
+
+If you only want the attribute table, call `tuikr::geo_map(level = 3, dataframe = TRUE)`.
+
+## Join and Plot
+
+Filter to the latest available year, join on `code`, and plot the result.
+
+```{r geo-plot, fig.alt = "Map of Turkey's provinces colored by the latest house sales totals."}
+latest_year <- max(housing_sales$date, na.rm = TRUE)
+
+housing_sales_latest <- housing_sales |>
+  dplyr::filter(date == latest_year)
+
+housing_sales_map <- province_boundaries |>
+  dplyr::left_join(housing_sales_latest, by = "code")
+
+ggplot2::ggplot(housing_sales_map) +
+  ggplot2::geom_sf(
+    ggplot2::aes(fill = number_of_house_sales_total),
+    color = "white",
+    linewidth = 0.1
+  ) +
+  ggplot2::coord_sf(datum = NA) +
+  ggplot2::scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
     legend.position = "bottom",
-    legend.key.width = unit(3, "cm")
+    legend.key.width = grid::unit(3, "cm")
   ) +
-  labs(
-    fill = "Adet",
-    title = "Yumurta Tavuğu Sayısı",
-    caption = "Kaynak: TÜİK"
-  ) +
-  facet_wrap(~date, ncol = 2)
-```
-
-### NUTS-3 Example: Housing Sales
-
-```{r nuts3_map}
-# 1. Find housing sales data
-variables |>
-  filter(var_num == "INS-GK055-O006")
-
-# 2. Download data
-house <- geo_data(
-  variable_level = 3,
-  variable_no = "INS-GK055-O006",
-  variable_source = "ilGostergeleri",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  mutate(konut_satis_sayilari_toplam = as.numeric(konut_satis_sayilari_toplam))
-
-# 3. Create map
-geo_map(3) |>
-  left_join(house, by = "code") |>
-  ggplot() +
-  geom_sf(aes(fill = konut_satis_sayilari_toplam)) +
-  coord_sf(datum = NA) +
-  scale_fill_viridis_c(option = "viridis") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    legend.key.width = unit(3, "cm"),
-    plot.title = element_text(hjust = 0.5)
-  ) +
-  labs(
-    fill = "Satış Sayısı",
-    title = "2025 Yılında Konut Satış Sayıları",
-    caption = "Kaynak: TÜİK"
+  ggplot2::labs(
+    title = paste("Housing sales by province", latest_year),
+    fill = "Sales",
+    caption = "Source: TUIK"
   )
 ```
 
-### LAU-1 Example: Illiteracy Rates
+## Troubleshooting
 
-```{r lau1_map}
-# 1. Download illiteracy data at district level
-illiteracy <- geo_data(
-  variable_level = 4,
-  variable_no = "ULE-GK160887-O29502",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  filter(date == 2022) |>
-  mutate(okuma_yazma_bilmeyen_sayisi = as.numeric(okuma_yazma_bilmeyen_sayisi))
+If a request fails, go back to the metadata table and inspect `var_levels`
+before changing `var_level`. Many indicators are not available at every
+geographic level.
 
-# 2. Join with district boundaries
-geo_map(4) |>
-  left_join(illiteracy, by = "code") |>
-  ggplot() +
-  geom_sf(aes(fill = okuma_yazma_bilmeyen_sayisi), lwd = 0.1) +
-  coord_sf(datum = NA) +
-  scale_fill_viridis_c(option = "inferno") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    legend.key.width = unit(3, "cm"),
-    plot.title = element_text(hjust = 0.5)
-  ) +
-  labs(
-    fill = "Sayı",
-    title = "2022 Yılında Okuma Yazma Bilmeyen Sayısı",
-    caption = "Kaynak: TÜİK"
-  )
-```
+If the join produces missing fills, inspect the boundary keys with
+`sf::st_drop_geometry(province_boundaries)` or call `tuikr::geo_map(level = 3, dataframe = TRUE)`
+to compare codes directly.
 
-### Regional Focus: Ankara Region
-
-```{r regional}
-# Focus on Ankara region (TR51)
-population <- geo_data(
-  variable_level = 4,
-  variable_no = "ADNKS-GK137473-O29001",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  mutate(toplam_nufus = as.numeric(toplam_nufus))
-
-geo_map(4) |>
-  left_join(population, by = "code") |>
-  filter(bolgeKodu == "TR51") |>
-  ggplot() +
-  geom_sf(aes(fill = toplam_nufus)) +
-  scale_fill_viridis_c(option = "viridis") +
-  theme_minimal() +
-  labs(
-    fill = "Nüfus",
-    title = "Ankara Bölgesi İlçe Nüfusları (2025)",
-    caption = "Kaynak: TÜİK"
-  )
-```
-
-## Advanced Cartography
-
-### Hexagonal Cartograms
-
-```{r hex, message=FALSE}
-library(geogrid)
-
-# 1. Transform CRS for better projection
-tur_hex_map <- st_transform(geo_map(3), crs = 3395)
-
-# 2. Download and join automobile data
-auto_data <- geo_data(
-  variable_level = 3,
-  variable_no = "ULS-GK093-O009",
-  variable_source = "ilGostergeleri",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  filter(date == 2024) |>
-  mutate(bin_kisi_basina_otomobil_sayisi = as.numeric(bin_kisi_basina_otomobil_sayisi))
-
-tur_hex_dt <- left_join(tur_hex_map, auto_data, by = "code")
-
-# 3. Calculate hexagonal grid
-new_hex <- calculate_grid(
-  shape = tur_hex_dt,
-  grid_type = "hexagonal",
-  seed = 9
-)
-result_hex <- assign_polygons(tur_hex_dt, new_hex)
-
-# 4. Plot
-result_hex |>
-  mutate(
-    name = str_replace(name, "AFYONKARAHİSAR", "AFYON"),
-    name = str_replace(name, "KAHRAMANMARAŞ", "K.MARAŞ")
-  ) |>
-  ggplot() +
-  geom_sf(aes(fill = bin_kisi_basina_otomobil_sayisi), lwd = 0.1) +
-  geom_sf_text(aes(label = name), color = "black", size = 2) +
-  coord_sf(datum = NA) +
-  scale_fill_viridis_c(option = "plasma") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    legend.key.width = unit(3, "cm")
-  ) +
-  labs(
-    fill = "Oran",
-    title = "Bin Kişi Başına Otomobil Sayısı (2024)",
-    caption = "Kaynak: TÜİK"
-  )
-```
-
-### Dorling Cartograms
-
-```{r dorling, message=FALSE}
-library(cartogram)
-
-# 1. Download population and illiteracy data
-tur_map <- st_transform(geo_map(4), crs = 3395)
-
-population <- geo_data(
-  variable_level = 4,
-  variable_no = "ADNKS-GK137473-O29001",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  filter(date == 2024) |>
-  mutate(toplam_nufus = as.numeric(toplam_nufus))
-
-illiteracy <- geo_data(
-  variable_level = 4,
-  variable_no = "ULE-GK160887-O29502",
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-) |>
-  filter(date == 2024) |>
-  mutate(okuma_yazma_bilmeyen_sayisi = as.numeric(okuma_yazma_bilmeyen_sayisi))
-
-# 2. Combine datasets
-
-combined <- left_join(population, illiteracy, by = c("code", "date")) |>
-  mutate(illiteracy_rate = 100 * (okuma_yazma_bilmeyen_sayisi / toplam_nufus)) 
-
-combined <- tur_map |> 
-  left_join(combined, by = "code")
-
-# 3. Create Dorling cartogram (sized by illiteracy count)
-dorling <- cartogram_dorling(combined, "okuma_yazma_bilmeyen_sayisi", 0.4)
-
-# 4. Plot
-dorling |>
-  ggplot() +
-  geom_sf(aes(fill = illiteracy_rate), lwd = 0.1) +
-  coord_sf(datum = NA) +
-  scale_fill_viridis_c(option = "inferno") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    legend.key.width = unit(3, "cm")
-  ) +
-  labs(
-    fill = "Oran (%)",
-    title = "Okuma Yazma Bilmeyen Oranı (2024)",
-    subtitle = "Daire boyutu: toplam sayı",
-    caption = "Kaynak: TÜİK"
-  )
-```
-
+If you need a different geometry type, remember that levels 2, 3, and 4 return
+polygon boundaries while level 9 returns settlement points.

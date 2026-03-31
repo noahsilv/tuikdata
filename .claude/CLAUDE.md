@@ -1,301 +1,278 @@
-# tuikr Package Development
+# CLAUDE.md
 
-This file provides guidance to Claude Code when working on the tuikr package.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Package Overview
+## Overview
 
-**tuikr** - R package for downloading data files and database URLs from TUIK (Turkish Statistical Institute).
+`tuikr` is an R package for accessing Turkish Statistical Institute (TUIK) data from two distinct portals:
+- **Statistical Data Portal** (`veriportali.tuik.gov.tr`): Themes, tables, databases, SDMX dataflows, and portal resources
+- **Geographic Portal** (`cip.tuik.gov.tr`): Spatial data, map boundaries at multiple NUTS levels
 
-**Core functionality:**
-- Extract statistical tables from TUIK web portal
-- Access database endpoints
-- Download geographic data from statistics portal
+The package combines web scraping (statistical data) and JSON APIs (geographic data) to expose unified R functions.
 
-**Key dependencies:** tidyverse ecosystem (dplyr, purrr, tidyr), web scraping (rvest, xml2, crul), spatial (sf)
+## Key Architecture
 
-## Mandatory Code Standards (r/anti-slop)
+### Two Data Access Patterns
 
-### Namespacing - Always Explicit
+1. **Statistical Data** (web scraping-based):
+   - `statistical_themes()`: Scrapes main portal page for available theme list
+   - `statistical_tables(theme)`: Returns theme tables with `node_type`, `dataflow_id`, and `table_url`
+   - `statistical_databases(theme)`: Legacy database URLs
+   - `statistical_data(dataflow_id, key = "ALL")`: Downloads SDMX data, drops invariant dimensions, and adds `*_label` columns when labels are available
+   - `statistical_resources(theme)`: Returns all portal resources with `resource_type` and `resource_url`
+
+2. **Geographic Data** (JSON API-based):
+   - `geo_data()`: Without params returns variable metadata; with params downloads specific variable data for a level
+   - `geo_map(level, dataframe = FALSE)`: Downloads `sf` objects for mapping, or a plain tibble when `dataframe = TRUE`
+   - API endpoints: `cip.tuik.gov.tr/Home/GetMapData` and geometry files in `cip.tuik.gov.tr/assets/geometri/`
+
+### Geographic Levels Reference
+
+| Level | Geography | Count | Geometry |
+|-------|-----------|-------|----------|
+| 2 | NUTS-2 regions | 26 | MULTIPOLYGON |
+| 3 | NUTS-3 provinces | 81 | MULTIPOLYGON |
+| 4 | LAU-1 districts | 973 | MULTIPOLYGON |
+| 9 | Settlement points | 1,003 | POINT |
+
+### Helper Functions & Utilities
+
+- `make_request(url)`: HTTP POST wrapper using `crul` package
+- `check_theme_id(theme)`: Validates single theme ID, provides colored terminal feedback
+- Data cleaning: SDMX data is normalized to long form, invariant dimensions are removed, and label columns are appended where available
+- Validation: exported geo helpers reject vector, empty, and `NA` level inputs with package errors before any network call
+
+### Code Style & Patterns
+
+- **R Style**: tidyverse conventions, 2-space indentation, 120-char line limit (`.lintr` config)
+- **Pipes**: Uses native `|>` pipe (R 4.1+), not legacy `%>%`
+- **Returns**: Functions use implicit returns (last expression is returned automatically), not explicit `return()`
+- **Slicing**: Uses `dplyr::slice_head(n = 1)` instead of `dplyr::slice(1)` for explicit intent
+- **Non-standard evaluation**: Uses `.data$` in data-masking contexts (for example, `mutate()` and `filter()`), but not inside tidyselect helpers like `rename()` or `select()`
+- **Documentation**: Roxygen2 with markdown (RoxygenNote: 7.3.3)
+- **Conditional logic**: Prefers `dplyr::case_when()`
+- **Data structures**: Returns tibbles, not data.frames
+
+### Key Dependencies
+
+**Core imports** (always available):
+- `crul`: HTTP client for web requests
+- `dplyr`, `tidyr`, `purrr`: Data transformation
+- `stringr`, `janitor`: String/name cleaning
+- `jsonlite`: JSON parsing
+- `rsdmx`: SDMX dataflow parsing
+- `sf`: Spatial features for geographic data
+- `rlang`, `tibble`: Tidyverse foundation
+
+**Suggested dependencies** (optional, loaded as needed):
+- `testthat`: Testing framework
+- `covr`: Code coverage
+- `knitr`, `rmarkdown`: Vignettes
+- `pkgdown`: Website documentation
+- `V8`: Suggested dependency retained for broader compatibility work, but not used by the current geographic parser
+
+## Development Commands
+
+### Loading & Documentation
+
 ```r
-# CORRECT - Always use ::
-filtered_data <- dplyr::filter(data, condition)
-processed <- purrr::map(list, rvest::html_text)
+# Load package for development (without reinstalling)
+devtools::load_all()
 
-# WRONG - Never rely on imports
-filtered_data <- filter(data, condition)  # ❌
-processed <- map(list, html_text)  # ❌
+# Generate documentation from roxygen comments (creates man/ and updates NAMESPACE)
+devtools::document()
 ```
 
-### Returns - Always Explicit
+### Testing
+
 ```r
-# CORRECT
-get_tuik_data <- function(url) {
-  response <- crul::HttpClient$new(url)$get()
-  return(response$parse("UTF-8"))
+# Run all tests
+devtools::test()
+
+# Run network-backed integration tests explicitly
+Sys.setenv(RUN_NETWORK_TESTS = "true")
+devtools::test()
+
+# Run specific test file
+testthat::test_file("tests/testthat/test-statistical-themes.R")
+
+# Run tests with coverage report
+covr::report()
+```
+
+**Testing patterns**: Network-dependent tests are guarded by `RUN_NETWORK_TESTS` and `skip_if_offline()`. Testthat edition 3 is configured in DESCRIPTION.
+
+### Package Checking & Building
+
+```r
+# Full package check (runs tests, documentation, examples, warnings)
+devtools::check()
+
+# Build package tarball and run checks
+system("R CMD build . && R CMD check tuikr_*.tar.gz")
+
+# Install package locally
+devtools::install()
+```
+
+### Linting
+
+```r
+# Run lintr checks (configured in .lintr for 120-char line length)
+lintr::lint_package()
+```
+
+### Website Documentation
+
+```r
+# Build pkgdown website (uses eerdown theme)
+pkgdown::build_site()
+```
+
+## Important Implementation Details
+
+### Theme Validation
+
+- `check_theme_id()` only accepts **single theme IDs**, not vectors
+- Validates against current TUIK website list
+- Provides colored terminal feedback using `crayon`
+
+### Locale Handling in `statistical_tables()`
+
+Turkish date parsing requires locale switching:
+- Windows: `"Turkish_Turkey.utf8"`
+- Unix/macOS: `"tr_TR"`
+
+This is necessary because TUIK returns dates in Turkish format.
+
+### Language Support
+
+The `geo_data()` function supports:
+- Default: English labels (`lang = "en"`)
+- Turkish labels: `lang = "tr"`
+English is the default language (set in recent refactoring).
+
+### SDMX Dataflow Key Syntax
+
+`statistical_data()` uses SDMX dimension keys:
+- `key = "ALL"` works for many datasets (default)
+- Some dataflows require narrower keys to constrain dimensions
+- Key format: dimension constraints like `"1.2.3"` for specific values
+- Returned columns vary by dataset because invariant dimensions are dropped after normalization
+
+### Web Scraping Sensitivities
+
+The package relies on web scraping for statistical data (HTML parsing) and is sensitive to TUIK website structure changes. Geographic data is more stable (JSON API endpoints).
+
+## CI/CD & Deployment
+
+GitHub Actions workflows (`.github/workflows/`):
+- **R-CMD-check**: Multi-platform testing (Ubuntu devel/release/oldrel-1, macOS, Windows)
+- **test-coverage**: Code coverage tracking with codecov
+- **pkgdown**: Automatic website deployment to gh-pages branch
+- **air-format-check**: Code formatting validation
+
+Dependabot automatically updates GitHub Actions.
+
+## Known Sensitivities
+
+- **Database links**: Some TUIK database URLs may be outdated or non-functional due to TUIK website changes
+- **Excel files**: Downloaded XLS files from TUIK often have messy structure (multiple header rows, mixed languages, metadata at bottom) requiring manual cleaning
+- **API endpoint stability**: Geographic API is stable; statistical portal structure changes may break scraping logic
+
+## Vignettes
+
+Located in `vignettes/`:
+- `getting-started.Rmd`: Basic workflow for statistical and geographic data
+- `geographic-mapping.Rmd`: SF object joining and spatial visualization
+
+Vignettes are built and deployed with pkgdown.
+
+## Package Documentation
+
+- **Website**: https://eremrah.com/tuikr/ (deployed from gh-pages branch)
+- **Theme**: eerdown (custom theme, configured in `_pkgdown.yml`)
+- **Citation**: CFF v1.2.0 format in `CITATION.cff`
+
+## Modern R Development Practices
+
+This codebase follows **r-development skill** patterns for modern tidyverse development:
+
+### Key Patterns
+
+**Native Pipe (`|>` not `%>%`)**: All code uses R 4.1+ native pipe
+```r
+data |>
+  filter(year >= 2020) |>
+  summarise(mean_value = mean(value))
+```
+
+**Implicit Returns**: Functions return the last expression automatically
+```r
+# ✓ Modern style
+my_function <- function(x) {
+  x |>
+    dplyr::filter(condition) |>
+    dplyr::mutate(new_col = x * 2)
 }
 
-# WRONG
-get_tuik_data <- function(url) {
-  response <- crul::HttpClient$new(url)$get()
-  response$parse("UTF-8")  # ❌ implicit return
+# ✗ Outdated
+my_function <- function(x) {
+  result <- x |> filter(condition) |> mutate(new_col = x * 2)
+  return(result)
 }
 ```
 
-### Naming - Descriptive snake_case
+**Explicit Intent with `slice_head()`**: Use `slice_head(n = 1)` instead of `slice(1)`
 ```r
-# CORRECT - Domain-specific, descriptive names
-survey_data <- download_survey(url)
-geographic_boundaries <- extract_boundaries(response)
-table_metadata <- parse_metadata(html_content)
-
-# WRONG - Generic, vague names
-df <- download_survey(url)  # ❌
-data <- extract_boundaries(response)  # ❌
-result <- parse_metadata(html_content)  # ❌
-temp <- process_response(x)  # ❌
-final <- cleanup(temp)  # ❌
+data |>
+  dplyr::filter(var_num == selected) |>
+  dplyr::slice_head(n = 1)  # Clear: get the first row
 ```
 
-**Forbidden variable names:**
-- `df`, `data`, `result`, `output`
-- `temp`, `tmp`, `final`
-- `x`, `y` (except in mathematical contexts)
-- `obj`, `item`, `thing`
-
-**Good naming patterns for tuikr:**
-- `*_data` for data frames (e.g., `survey_data`, `population_data`)
-- `*_urls` for URL vectors
-- `*_response` for HTTP responses
-- `*_metadata` for extracted metadata
-- `*_boundaries` for geographic data
-
-### Pipes - Native and Manageable
+**NSE with `.data` Pronoun**: Use `.data$` for column references in data-masking contexts only
 ```r
-# CORRECT - Native pipe, reasonable length
-survey_urls <- html_response |>
-  rvest::html_elements(".table-link") |>
-  rvest::html_attr("href") |>
-  purrr::map_chr(build_full_url) |>
-  return()
-
-# If pipe exceeds 8 operations, break into steps
-raw_response <- fetch_tuik_page(url)
-table_elements <- extract_table_elements(raw_response)
-cleaned_data <- process_table_data(table_elements)
-return(cleaned_data)
-
-# WRONG - magrittr pipe
-survey_urls <- html_response %>%  # ❌
-  html_elements(".table-link")
+dplyr::filter(.data$var_num == .env$selected_var_num)
 ```
 
-### Package Structure
-- No `library()` calls in R/ code - only `::` for dependencies
-- All imports declared in DESCRIPTION
-- Use `@importFrom` sparingly in roxygen2 (prefer `::`)
-
-## Documentation Standards (text/anti-slop + elements-of-style)
-
-### Roxygen2 - Direct and Concrete
-
-**Function descriptions:**
+Use string or bare column references in tidyselect contexts:
 ```r
-# CORRECT - Active voice, starts with verb
-#' Downloads survey data from TUIK web portal
-#'
-#' Fetches statistical tables by survey ID and returns structured data.
-#'
-#' @param survey_id Character string. TUIK survey identifier.
-#' @param year Integer. Survey year (1990-2024).
-#' @return Data frame with survey responses and metadata.
-
-# WRONG - Passive voice, circular, vague
-#' Function to download survey data
-#'
-#' This function can be used to download data from TUIK. It will allow you
-#' to easily access various statistical tables.
-#'
-#' @param survey_id A character string that contains the survey ID
-#' @param year A numeric value representing the year
-#' @return Returns a data frame with the data
+dplyr::rename(code = "duzeyKodu")
 ```
 
-**Parameter documentation:**
-```r
-# CORRECT - Specific, direct
-#' @param url Character vector. Full TUIK database URLs.
-#' @param encoding Character string. Default "UTF-8".
+## Quick Development Workflow
 
-# WRONG - Verbose, hedging
-#' @param url A character vector that contains the URLs you want to download
-#' @param encoding Optional encoding parameter (typically UTF-8)
-```
+1. **Make changes to R files in `R/`**
+2. **Document**: `devtools::document()`
+3. **Test locally**: `devtools::test()`
+4. **Full check**: `devtools::check()` (catches documentation, examples, warnings)
+5. **Lint**: `lintr::lint_package()` (enforces 120-char line limit and style)
+6. **Push**: GitHub Actions runs full R-CMD-check on multiple platforms
 
-### README and Vignettes - Concrete and Active
+## Claude Code Automation Recommendations
 
-**Principles (Strunk's Elements of Style):**
-- **Rule 10**: Active voice ("extracts data" not "data is extracted")
-- **Rule 11**: Positive form ("use X" not "avoid Y")
-- **Rule 12**: Concrete language (specific examples, no abstractions)
-- **Rule 13**: Omit needless words
+When working on tuikr, consider using these Claude Code features:
 
-**Opening sections:**
-```r
-# CORRECT - Shows what it does
-## Installation
-install.packages("tuikr")
+### Skills
 
-## Usage
-library(tuikr)
+- **`r-skill:r-development`**: Modern R/tidyverse patterns (native pipes, implicit returns, `.by` parameter)
+  - Use before implementing features or refactoring R code
+  - Validates adherence to tidyverse best practices
 
-# Download population statistics
-population_data <- get_tuik_table(survey_id = "1602")
+- **`commit-commands:commit`**: Streamlined git commits with proper attribution
+  - Use to create commits with clear messages
 
-# WRONG - Meta-commentary and filler
-## Getting Started
-This package allows you to easily work with TUIK data. In this guide,
-we'll explore how to navigate the various features...
-```
+### MCP Servers
 
-**Remove these patterns:**
-- "This vignette will show you..."
-- "In order to download data..."
-- "It's important to note that..."
-- "Let's explore how to..."
-- "delve into", "navigate", "dive deep"
+- **GitHub MCP**: Check PR status, manage issues, read repository context
+  - Install: `claude mcp add github`
 
-**Vignette structure:**
-```markdown
-# Working with Geographic Data
+### Hooks (Optional)
 
-Download administrative boundaries from TUIK's geo portal:
+- **PostToolUse lint**: Auto-run `lintr::lint_file()` after editing R files
+- **PreToolUse protection**: Block accidental edits to DESCRIPTION or lock files
 
-(code example)
+### Subagents
 
-## Boundary Types
-
-TUIK provides three levels...
-
-(specific examples for each)
-```
-
-NOT:
-```markdown
-# Introduction
-
-This vignette explores the geographic data functionality...
-
-## Getting Started
-
-Before we delve into the details, it's important to note...
-```
-
-## Testing Standards
-
-### Test naming and structure
-```r
-# CORRECT - Descriptive test names
-test_that("get_tuik_table() returns data frame with required columns", {
-  survey_data <- get_tuik_table("1602")
-  expect_s3_class(survey_data, "data.frame")
-  expect_true("year" %in% colnames(survey_data))
-})
-
-# WRONG - Generic names
-test_that("function works", {  # ❌
-  df <- get_tuik_table("1602")  # ❌
-  expect_true(is.data.frame(df))
-})
-```
-
-## Quality Checks Before Committing
-
-### Run detection scripts
-```bash
-# Check R code for slop patterns
-Rscript ~/Workspace/eer-skills/toolkit/scripts/detect_slop.R R/ --verbose
-
-# Check documentation for slop patterns
-python ~/Workspace/eer-skills/toolkit/scripts/detect_slop.py README.md --verbose
-python ~/Workspace/eer-skills/toolkit/scripts/detect_slop.py vignettes/*.Rmd --verbose
-```
-
-**Target score:** < 20 (low slop)
-
-### Before submitting PR or release
-1. Run `devtools::check()` - must pass with 0 errors, 0 warnings
-2. Run slop detection on all modified files
-3. Check that documentation follows text/anti-slop standards
-4. Verify all examples run successfully
-5. Confirm test coverage is maintained
-
-## Common Workflows
-
-### Adding a new function
-1. Write function in R/ following r/anti-slop standards
-2. Add roxygen2 documentation (apply text/anti-slop)
-3. Run `devtools::document()`
-4. Write tests in tests/testthat/
-5. Run `Rscript ~/Workspace/eer-skills/toolkit/scripts/detect_slop.R R/new_file.R --verbose`
-6. Fix any issues if score > 20
-7. Run `devtools::test()`
-
-### Updating README or vignettes
-1. Draft content
-2. Apply text/anti-slop manually:
-   - Remove filler phrases and transitions
-   - Remove meta-commentary
-   - Use active voice
-3. Apply elements-of-style principles:
-   - Concrete, specific language
-   - Omit needless words
-   - Positive form
-4. Run `python ~/Workspace/eer-skills/toolkit/scripts/detect_slop.py <file.md> --verbose`
-5. If score > 20: `python ~/Workspace/eer-skills/toolkit/scripts/clean_slop.py <file.md> --save`
-6. Review cleaned output and refine
-
-### Refactoring existing code
-1. Read current implementation
-2. Identify r/anti-slop violations:
-   - Missing `::`
-   - Implicit returns
-   - Generic names (df, data, result)
-3. Refactor incrementally
-4. Run tests after each change
-5. Verify with detection script
-
-## Package-Specific Context
-
-### TUIK terminology
-Use consistent, domain-appropriate terms:
-- "survey" not "questionnaire" or "form"
-- "statistical table" not "data table" or "results"
-- "geographic boundaries" not "shapes" or "polygons"
-- "metadata" not "info" or "details"
-
-### Common operations naming
-- `get_*()` for download/fetch operations
-- `extract_*()` for parsing operations
-- `parse_*()` for transformation operations
-- `build_*()` for URL/path construction
-
-### Error messages
-Be specific about what failed and why:
-```r
-# CORRECT
-stop("Survey ID '", survey_id, "' not found in TUIK database")
-
-# WRONG
-stop("Invalid input")  # ❌
-stop("Error occurred")  # ❌
-```
-
-## Notes for Claude
-
-When working on tuikr:
-- This is a web scraping package - expect brittle code that may break with TUIK website changes
-- Geographic data handling requires sf package - use sf:: explicitly
-- HTTP operations use crul - always handle timeouts and errors
-- Apply r/anti-slop standards automatically, not just when asked
-- For documentation, apply both text/anti-slop and elements-of-style principles
-- Run detection scripts proactively before marking work complete
+- **code-reviewer**: Parallel code quality review across modified files
+  - Useful for PR preparation before human review

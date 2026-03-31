@@ -2,29 +2,37 @@
 % Please edit documentation in R/statistical-themes.R
 \name{statistical_themes}
 \alias{statistical_themes}
-\title{Get Statistical Themes and URLs from TUIK}
+\title{Get Statistical Themes from TUIK}
 \usage{
-statistical_themes()
+statistical_themes(lang = "en")
+}
+\arguments{
+\item{lang}{Character string. Portal language code. Default \code{"en"} for
+English. Use \code{"tr"} for Turkish.}
 }
 \value{
 A tibble with 2 columns:
 \describe{
-\item{theme_name}{Character. Turkish name of the statistical theme}
-\item{theme_id}{Character. Numeric ID used to query tables and databases}
+\item{theme_name}{Character. Name of the statistical theme.}
+\item{theme_id}{Character. Numeric ID used to query tables and databases.}
 }
 }
 \description{
-Retrieves all available statistical themes from the TUIK data portal.
-Theme IDs are used with \code{\link{statistical_tables}} and
-\code{\link{statistical_databases}} to access specific data.
+Retrieves all top-level statistical themes from the TUIK data portal.
+Theme IDs are used with \code{\link{statistical_resources}},
+\code{\link{statistical_tables}}, and \code{\link{statistical_databases}} to
+access specific portal resources. For SDMX-backed datasets, use
+\code{\link{statistical_tables}} or \code{\link{statistical_resources}} to discover
+\code{dataflow_id} values, then pass those identifiers to
+\code{\link{statistical_data}}.
 }
 \examples{
 \dontrun{
-# Get all available themes
 themes <- statistical_themes()
-
-# View theme names and IDs
-print(themes)
 }
 
+}
+\seealso{
+\code{\link{statistical_tables}}, \code{\link{statistical_resources}},
+\code{\link{statistical_databases}}, \code{\link{statistical_data}}
 }

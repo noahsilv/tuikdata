@@ -9,7 +9,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  cache = TRUE
 )
 ```
 
@@ -17,14 +18,16 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![DOI](https://zenodo.org/badge/313863336.svg)](https://zenodo.org/badge/latestdoi/313863336)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/emraher/tuikr/workflows/R-CMD-check/badge.svg)](https://github.com/emraher/tuikr)
 <!-- badges: end -->
 
-R package for accessing Turkish Statistical Institute (TUIK) data from two portals:
+**tuikr** provides functions to query Turkish Statistical Institute (TUIK) data from two portals:
 
-- **Statistical data**: Themes, tables, and databases from [data.tuik.gov.tr](https://data.tuik.gov.tr/)
+- **Statistical data**: Themes, file downloads, SDMX dataflows, and legacy databases from [veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)
 - **Geographic data**: Maps and spatial statistics from [cip.tuik.gov.tr](https://cip.tuik.gov.tr/)
+
+**Disclaimer**: This package is not affiliated with, endorsed by, or connected to Turkish Statistical Institute (TUIK). It is an independent tool for academic research purposes.
 
 ## Installation
 
@@ -37,60 +40,111 @@ devtools::install_github("emraher/tuikr")
 
 ### Statistical Data
 
-```{r statistical-example}
+#### 1. List themes
+```{r statistical-example1, eval = TRUE}
 library(tuikr)
+library(tibble)
 
-# List all themes
-themes <- statistical_themes()
-head(themes)
-
-# Get tables for a theme
-tables <- statistical_tables(110)
-head(tables, 3)
-
-# Get databases for a theme
-databases <- statistical_databases(110)
-head(databases, 3)
+(theme_catalog <- statistical_themes())
 ```
+
+#### 2. Tables for Population & Demography (theme 11)
+```{r statistical-example2, eval = TRUE}
+(population_tables <- statistical_tables("11"))
+```
+
+#### 3. SDMX dataflows only
+```{r statistical-example3, eval = TRUE}
+(population_dataflows <- dplyr::filter(
+  population_tables,
+  node_type == "dataflow"
+))
+```
+
+#### 4. File downloads expose a direct table_url
+```{r statistical-example4, eval = TRUE}
+population_files <- dplyr::filter(
+  population_tables,
+  node_type == "istab"
+)
+population_files$table_url[1]
+```
+
+#### 5. Download one dataset
+```{r statistical-example5, eval = TRUE}
+(population_observations <- statistical_data(
+  population_dataflows$dataflow_id[1]
+))
+```
+
+`statistical_data()` adds adjacent `*_label` columns when TUIK exposes
+human-readable code-list metadata. The default `key = "ALL"` works for many
+datasets, but some SDMX dataflows need a narrower key to constrain the
+remaining dimensions.
+
+#### 6. Legacy database URLs
+```{r statistical-example6, eval = TRUE}
+(population_databases <- statistical_databases("11"))
+```
+
+#### 7. All portal resources
+```{r statistical-example7, eval = TRUE}
+(population_resources <- statistical_resources("11"))
+```
+
+#### 8. Press releases and reports keep their portal URLs
+```{r statistical-example8, eval = TRUE}
+population_publications <- dplyr::filter(
+  population_resources,
+  resource_type %in% c("press", "report")
+)
+population_publications |>
+  dplyr::select(resource_type, resource_name, resource_url) |>
+  dplyr::slice(3)
+```
+
+
 
 ### Geographic Data
 
-```{r geographic-example}
-library(dplyr)
+#### 1. List available geographic variables
 
-# List available geographic variables
-variables <- geo_data()
-head(variables, 3)
+```{r geographic-example1, eval = TRUE}
+(geo_variable_catalog <- geo_data())
+```
 
-# Download data for a specific variable
-population <- geo_data(
-  variable_no = "ADNKS-GK137473-O29001",
-  variable_level = 3,
-  variable_source = "medas",
-  variable_period = "yillik",
-  variable_recnum = 5
-)
-head(population, 3)
+#### 2. List geographic variables in Turkish
 
-# Get map boundaries at different levels
+```{r geographic-example2, eval = TRUE}
+(geo_variable_catalog_tr <- geo_data(lang = "tr"))
+```
+
+#### 3. Download data for a specific variable
+
+```{r geographic-example3, eval = TRUE}
+(population_values <- geo_data(
+  var_num = "ADNKS-GK137473-O29001",
+  var_level = 3
+))
+```
+
+#### 4. Get map boundaries at different levels
+
+```{r geographic-example4, eval = TRUE}
 nuts2_map <- geo_map(level = 2)  # 26 regions
 nuts3_map <- geo_map(level = 3)  # 81 provinces
 lau1_map <- geo_map(level = 4)   # 973 districts
-
-# Preview map data
-head(nuts3_map, 3)
+settlements <- geo_map(level = 9)  # settlement points
 ```
 
-## Available Map Levels
+`geo_map()` returns `sf` objects in WGS 84 (EPSG:4326), ready for
+`dplyr::left_join()` on the `code` column when you want to combine boundaries
+with values returned by `geo_data()`.
 
-- **Level 2**: NUTS-2 regions (26 regions)
-- **Level 3**: NUTS-3 / Provincial level (81 provinces)
-- **Level 4**: LAU-1 / District level (973 districts)
-- **Level 9**: Settlement points (returns POINT geometries)
 
-## Documentation
 
-- [Getting Started](https://eremrah.com/tuikr/articles/getting-started.html)
-- [Geographic Mapping Examples](https://eremrah.com/tuikr/articles/geographic-mapping.html)
-- [Known Issues](https://eremrah.com/tuikr/articles/known-issues.html)
+## Learn More
 
+- **[Getting Started](https://emraher.github.io/tuikr/articles/getting-started.html)**
+- **[Geographic Mapping](https://emraher.github.io/tuikr/articles/geographic-mapping.html)**
+- **[Function Reference](https://emraher.github.io/tuikr/reference/index.html)**

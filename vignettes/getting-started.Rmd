@@ -1,119 +1,130 @@
 ---
-title: "Getting Started with tuikr"
+title: "Downloading Statistical Data with tuikr"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with tuikr}
+  %\VignetteIndexEntry{Downloading Statistical Data with tuikr}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
+build_examples <- identical(Sys.getenv("IN_PKGDOWN"), "true")
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = TRUE
+  eval = build_examples,
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
 ## Introduction
 
-`tuikr` provides access to Turkish Statistical Institute (TUIK) data from two portals:
+`tuikr` exposes two statistical download paths from the TUIK portal:
 
-1. **Main portal** ([data.tuik.gov.tr](https://data.tuik.gov.tr/)): Statistical themes, tables, and databases
-2. **Geographic portal** ([cip.tuik.gov.tr](https://cip.tuik.gov.tr/)): Spatial data and maps
+- `dataflow` rows point to SDMX datasets that work with `tuikr::statistical_data()`
+- `istab` rows point to spreadsheet downloads served by the portal
 
-## Installation
+This vignette walks through one theme, downloads one SDMX series, and then
+downloads one spreadsheet file with the same browser-style session that the
+portal expects.
 
-Install the development version from GitHub:
+## Discover a Theme
 
-```{r install, eval=FALSE}
-# install.packages("devtools")
-devtools::install_github("emraher/tuikr")
-```
-
-Load the package:
-
-```{r setup}
-library(tuikr)
-library(tidyverse)
-```
-
-## Statistical Data Workflow
-
-### Step 1: Discover Themes
-
-TUIK organizes data into 17 thematic categories. Start by listing all available themes:
+Start with the theme catalog and locate the Population and Demography folder:
 
 ```{r themes}
-(themes <- statistical_themes())
+theme_catalog <- tuikr::statistical_themes()
+
+theme_catalog |>
+  dplyr::filter(theme_id == "11")
 ```
 
-Returns a tibble with theme names (Turkish) and IDs.
+## Inspect Table Nodes
 
-### Step 2: Find Tables
-
-Retrieve data tables for a theme:
+`tuikr::statistical_tables()` returns both SDMX dataflows and spreadsheet
+downloads for the same theme. The `node_type` column tells you which path you
+are looking at.
 
 ```{r tables}
-# Get tables for Justice and Elections theme
-justice_tables <- statistical_tables("110")
+population_tables <- tuikr::statistical_tables("11")
 
-# View the first few tables
-head(justice_tables)
+population_tables |>
+  dplyr::count(node_type)
 ```
 
-The function validates input:
-
-```{r validate, error=TRUE, eval=FALSE}
-# Invalid theme ID
-statistical_tables("aaa")
-#> Error in check_theme_id(theme) : You should select a valid theme ID!
+```{r table-preview}
+population_tables |>
+  dplyr::select(table_name, node_type, dataflow_id, table_url) |>
+  dplyr::slice_head(n = 6)
 ```
 
-```{r validate2, error=TRUE, eval=FALSE}
-# Multiple themes not allowed
-statistical_tables(c("110", "108"))
-#> Error in check_theme_id(theme) : You can select only one theme!
-```
+## Check Legacy Database Links
 
-### Step 3: Get Database URLs
-
-Retrieve database URLs:
+The legacy database URLs are still useful for manual browsing, even though they
+are not the main programmatic download path.
 
 ```{r databases}
-justice_dbs <- statistical_databases("110")
+population_databases <- tuikr::statistical_databases("11")
+
+population_databases |>
+  dplyr::select(db_name, db_url) |>
+  dplyr::slice_head(n = 3)
 ```
 
+## Download an SDMX Dataset
 
-## Downloading Data Files
+Use the `dataflow_id` to request observations directly from the SDMX endpoint.
+This chunk discovers the current flow ID for the "Age dependency ratio" table
+before it calls `tuikr::statistical_data()`.
 
-Download Excel files using the URLs:
+```{r sdmx-download}
+age_dependency_flow <- population_tables |>
+  dplyr::filter(
+    node_type == "dataflow",
+    table_name == "Age dependency ratio"
+  ) |>
+  dplyr::slice_head(n = 1)
 
-```{r download}
-# Download a specific file
-download.file(
-  justice_tables$datafile_url[1],
-  destfile = "/tmp/tuik_data.xls",
-  mode = "wb"
+population_data <- tuikr::statistical_data(
+  dataflow_id = age_dependency_flow$dataflow_id[[1]],
+  start = "2020",
+  end = "2023"
 )
 
-# Read into R
-library(readxl)
-data <- read_xls("/tmp/tuik_data.xls")
+population_data
 ```
 
-TUIK Excel files often need cleaning: multiple headers, footer notes, mixed languages. Use `skip`, `n_max`, and `janitor::clean_names()`.
+`tuikr::statistical_data()` adds adjacent `*_label` columns when TUIK publishes
+code-list labels, so you can work with readable values without losing the
+original codes.
 
-## Troubleshooting
+## Download a Spreadsheet Table
 
-### Network Issues
+`istab` rows expose the spreadsheet download link in `table_url`.
 
-Check TUIK portal accessibility. See [Issue #2](https://github.com/emraher/tuikr/issues/2) for known connection problems.
+```{r spreadsheet-download}
+population_file_url <- population_tables |>
+  dplyr::filter(node_type == "istab") |>
+  dplyr::slice_head(n = 1) |>
+  dplyr::pull(table_url)
 
-### Website Structure Changes
+population_file_url
+```
 
-TUIK website updates can break scraping. Check for package updates and report issues on [GitHub](https://github.com/emraher/tuikr/issues).
+Open that URL in a browser, or pass it to your own download workflow. `istab`
+files often arrive with stacked headers, mixed labels, and source notes inside
+the worksheet.
 
-### Excel File Problems
+## Inspect the Full Resource Catalog
 
-Try `readxl::read_excel()`, use `skip` and `n_max` parameters, or inspect files manually.
+Use `tuikr::statistical_resources()` when you want one table of all supported
+resource types for a theme.
+
+```{r resources}
+population_resources <- tuikr::statistical_resources("11")
+
+population_resources |>
+  dplyr::count(resource_type)
+```

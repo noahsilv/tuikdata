@@ -20,10 +20,9 @@
 #'
 #' **Levels 2, 3, 4** return MULTIPOLYGON geometries with columns:
 #' \describe{
-#'   \item{code}{Character. Unique geographic code}
+#'   \item{code}{Character. Unique geographic code (renamed from \code{duzeyKodu})}
 #'   \item{bolgeKodu}{Character. NUTS region code}
 #'   \item{nutsKodu}{Character. NUTS classification code}
-#'   \item{name}{Character. Geographic unit name (often in English)}
 #'   \item{ad}{Character. Geographic unit name in Turkish}
 #'   \item{geometry}{sfc_MULTIPOLYGON. Spatial boundaries (WGS 84)}
 #' }
@@ -39,13 +38,23 @@
 #'
 #' @examples
 #' \dontrun{
-#' geo_map(level = 2)
+#' # Download NUTS-3 boundaries as sf object
+#' nuts3_sf <- geo_map(level = 3)
+#'
+#' # Drop geometry — return plain tibble for joins
+#' nuts3_tbl <- geo_map(level = 3, dataframe = TRUE)
+#'
+#' # Settlement points (POINT geometry)
+#' settlements <- geo_map(level = 9)
 #' }
+#'
+#' @seealso
+#' \code{\link{geo_data}} for geographic statistical data
 #'
 #' @export
 geo_map <- function(level = 2, dataframe = FALSE) {
-  if (!(level %in% c(2, 3, 4, 9))) {
-    stop("level must be 2, 3, 4, or 9")
+  if (length(level) != 1 || is.na(level) || !(level %in% c(2, 3, 4, 9))) {
+    stop("level must be a single value of 2, 3, 4, or 9.", call. = FALSE)
   }
 
   urls <- c(
@@ -64,14 +73,24 @@ geo_map <- function(level = 2, dataframe = FALSE) {
     }
   )
 
+  # The TUIK API returns `"type":["FeatureCollection"]` (array-wrapped) instead
+  # of `"type":"FeatureCollection"`, which is invalid GeoJSON. sf::read_sf()
+  # rejects it. The replacement below fixes the upstream defect before parsing.
   dt_sf <- map_json_data |>
     jsonlite::toJSON() |>
     stringr::str_replace_all('\\[\"FeatureCollection\"\\]', '\"FeatureCollection\"') |>
     sf::read_sf()
 
+  dt_sf$name <- NULL
+
+  dt_sf <- dt_sf |>
+    dplyr::mutate(
+      dplyr::across(dplyr::where(is.character), stringr::str_trim)
+    )
+
   if (level != 9) {
     dt_sf <- dt_sf |>
-      dplyr::rename(code = .data$duzeyKodu) |>
+      dplyr::rename(code = "duzeyKodu") |>
       dplyr::mutate(code = as.character(.data$code))
   }
 
