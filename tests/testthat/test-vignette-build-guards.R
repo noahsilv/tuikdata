@@ -18,3 +18,19 @@ test_that("network-heavy vignettes are disabled outside pkgdown builds", {
     expect_true(any(grepl("IN_PKGDOWN: true", pkgdown_workflow, fixed = TRUE)))
   }
 })
+
+test_that("geographic mapping vignette provides alt text for the map figure", {
+  root <- testthat::test_path("..", "..")
+  vignette_path <- file.path(root, "vignettes/geographic-mapping.Rmd")
+
+  testthat::skip_if_not(
+    file.exists(vignette_path),
+    "Source vignette files are not available in installed-package tests."
+  )
+
+  geographic_mapping <- readLines(vignette_path, warn = FALSE)
+  geo_plot_line <- grep("^```\\{r geo-plot", geographic_mapping)
+
+  expect_length(geo_plot_line, 1L)
+  expect_match(geographic_mapping[[geo_plot_line]], "fig\\.alt\\s*=")
+})

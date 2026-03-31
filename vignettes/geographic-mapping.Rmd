@@ -104,7 +104,7 @@ If you only want the attribute table, call `tuikr::geo_map(level = 3, dataframe 
 
 Filter to the latest available year, join on `code`, and plot the result.
 
-```{r geo-plot}
+```{r geo-plot, fig.alt = "Map of Turkey's provinces colored by the latest house sales totals."}
 latest_year <- max(housing_sales$date, na.rm = TRUE)
 
 housing_sales_latest <- housing_sales |>
