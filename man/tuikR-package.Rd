@@ -13,8 +13,8 @@ Accesses Turkish Statistical Institute (TUIK) statistical tables, portal resourc
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/emraher/tuikr}
   \item \url{https://eremrah.com/tuikr/}
+  \item \url{https://github.com/emraher/tuikr}
   \item Report bugs at \url{https://github.com/emraher/tuikr/issues}
 }
 
