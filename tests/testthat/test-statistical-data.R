@@ -62,6 +62,10 @@ test_that("statistical_data downloads a TUIK SDMX dataset", {
     identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
     "Set RUN_NETWORK_TESTS=true to run network integration tests."
   )
+  skip_if_not(
+    nzchar(Sys.getenv("TUIK_API_KEY")),
+    "Set TUIK_API_KEY to run authenticated TUIK SDMX tests."
+  )
   skip_if_offline()
 
   uhti_data <- statistical_data(
@@ -79,6 +83,10 @@ test_that("internal structure helper downloads TUIK SDMX metadata", {
   skip_if_not(
     identical(Sys.getenv("RUN_NETWORK_TESTS"), "true"),
     "Set RUN_NETWORK_TESTS=true to run network integration tests."
+  )
+  skip_if_not(
+    nzchar(Sys.getenv("TUIK_API_KEY")),
+    "Set TUIK_API_KEY to run authenticated TUIK SDMX tests."
   )
   skip_if_offline()
 

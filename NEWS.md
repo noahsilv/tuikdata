@@ -1,3 +1,22 @@
+# tuikr 0.3.0
+
+## Breaking changes
+
+* TUIK now requires authentication for its SDMX web service
+  (`nsiws.tuik.gov.tr`), so `statistical_data()` needs a personal API key.
+  Register at <https://veriportali.tuik.gov.tr/>, verify your phone number,
+  generate an API key under 'User Information', and store it in the
+  `TUIK_API_KEY` environment variable. Requests without a key now fail with
+  setup guidance instead of TUIK's bare `401 Unauthorized`.
+
+## New features
+
+* Added internal Bearer-token handling for the TUIK SDMX web service: the
+  API key is exchanged at the TUIK login service for short-lived access
+  tokens, which are cached and refreshed automatically before they expire.
+
+---
+
 # tuikr 0.2.0
 
 ## Breaking changes

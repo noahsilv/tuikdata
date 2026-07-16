@@ -53,12 +53,14 @@ def nuts2_geojson() -> dict:
 
 @pytest.fixture(autouse=True)
 def clear_caches():
-    from tuik_mcp import geo, portal, sdmx
+    from tuik_mcp import auth, geo, portal, sdmx
 
     portal.clear_cache()
     sdmx.clear_cache()
     geo.clear_cache()
+    auth.clear_token_cache()
     yield
     portal.clear_cache()
     sdmx.clear_cache()
     geo.clear_cache()
+    auth.clear_token_cache()

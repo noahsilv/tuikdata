@@ -31,6 +31,31 @@ tool for academic research purposes.
 devtools::install_github("emraher/tuikr")
 ```
 
+## Authentication for SDMX downloads
+
+TUIK requires a personal API key for its SDMX web service
+(`nsiws.tuik.gov.tr`), which backs `statistical_data()`. Discovery
+functions (`statistical_themes()`, `statistical_tables()`,
+`statistical_resources()`, `statistical_databases()`) and the geographic
+functions work without a key.
+
+1.  Register at
+    [veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/) and
+    verify your phone number.
+2.  Generate an API key under **User Information**.
+3.  Store it in the `TUIK_API_KEY` environment variable:
+
+``` r
+# For the current session
+Sys.setenv(TUIK_API_KEY = "<your key>")
+
+# Or persist it in ~/.Renviron
+# TUIK_API_KEY=<your key>
+```
+
+tuikr exchanges the key for short-lived Bearer tokens automatically and
+refreshes them as needed.
+
 ## Quick Start
 
 ### Statistical Data
