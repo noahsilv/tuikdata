@@ -87,6 +87,13 @@ fastmcp run -m tuik_mcp.server --transport http --port 8000
 > that only resolve when `tuik_mcp` is loaded as an installed package.
 > Use `-m tuik_mcp.server` or the `tuik-mcp` entry point instead.
 
+### Hosted deployment (Prefect Horizon / FastMCP Cloud)
+
+The repository root contains a `server.py` shim and `requirements.txt` for
+hosting platforms that expect a root-level entrypoint. Point the platform's
+entrypoint setting at `server.py` (or `server.py:mcp`) — no package install
+step needed; the shim adds `mcp-server/src` to the path itself.
+
 ### Claude Desktop / Claude Code configuration
 
 ```json
