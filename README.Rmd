@@ -143,6 +143,14 @@ with values returned by `geo_data()`.
 
 
 
+## MCP Server
+
+The repository also ships a [FastMCP](https://gofastmcp.com) server
+(`mcp-server/`) that exposes the same TUIK data surfaces — portal discovery,
+SDMX downloads, and geographic data — as Model Context Protocol tools for
+Claude Desktop, Claude Code, and other MCP clients. See
+[mcp-server/README.md](mcp-server/README.md) for installation and usage.
+
 ## Learn More
 
 - **[Getting Started](https://emraher.github.io/tuikr/articles/getting-started.html)**

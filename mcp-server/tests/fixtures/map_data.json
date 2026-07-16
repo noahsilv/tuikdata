@@ -1,0 +1,9 @@
+{
+  "gosterge_ad": "Toplam nüfus",
+  "gosterge_ad_ing": "Total population",
+  "tarihler": ["2022", "2023"],
+  "veriler": [
+    { "kod": "TR1", "veri": [15900000, 16000000] },
+    { "kod": "TR5", "veri": [8100000, 8200000] }
+  ]
+}
