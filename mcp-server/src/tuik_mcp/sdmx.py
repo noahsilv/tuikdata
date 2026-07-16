@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Any
 
+from .auth import sdmx_auth_headers
 from .http_client import TTLCache, USER_AGENT, get_with_retries
 
 SDMX_BASE_URL = "https://nsiws.tuik.gov.tr/rest"
@@ -186,6 +187,7 @@ def _fetch_structure_uncached(dataflow_id: str) -> DataflowStructure:
         headers={
             "Accept": "application/vnd.sdmx.structure+xml;version=2.1, application/xml",
             "User-Agent": USER_AGENT,
+            **sdmx_auth_headers(),
         },
     )
     return parse_structure_xml(response.text, dataflow_id)
@@ -425,6 +427,7 @@ def fetch_data(
                 "application/xml"
             ),
             "User-Agent": USER_AGENT,
+            **sdmx_auth_headers(),
         },
     )
     return parse_data_xml(response.text)

@@ -61,6 +61,34 @@ statistical_data("TR,DF_ADNKS_T26,1.0", key="..TR100", start="2020")
 For maps: `geo_variables()` → `geo_data(var_num, level)` →
 `geo_map(level)` and join on `code`.
 
+## Authentication (SDMX tools)
+
+TUIK requires a personal API key for its SDMX web service
+(`nsiws.tuik.gov.tr`), which backs `statistical_data_structure` and
+`statistical_data`. The portal and geographic tools work without a key.
+
+1. Register at [veriportali.tuik.gov.tr](https://veriportali.tuik.gov.tr/)
+   and verify your phone number.
+2. Generate an API key under **User Information**.
+3. Set it in the `TUIK_API_KEY` environment variable where the server runs
+   (shell profile, MCP client `env` config, or the hosting platform's
+   secrets settings).
+
+The server exchanges the key for short-lived (~300 s) Bearer tokens at the
+TUIK login service and refreshes them automatically. Without the variable,
+SDMX tools fail with setup guidance.
+
+```json
+{
+  "mcpServers": {
+    "tuik": {
+      "command": "tuik-mcp",
+      "env": { "TUIK_API_KEY": "<your key>" }
+    }
+  }
+}
+```
+
 ## Installation
 
 ```bash

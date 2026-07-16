@@ -129,7 +129,8 @@ read_sdmx_document <- function(file) {
     file = file,
     isURL = TRUE,
     validate = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    headers = build_sdmx_auth_headers()
   )
 }
 

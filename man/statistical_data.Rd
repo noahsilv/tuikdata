@@ -41,6 +41,17 @@ labels are available.
 \description{
 Download a TUIK SDMX dataset identified by \code{dataflow_id}.
 }
+\section{Authentication}{
+
+The TUIK SDMX web service requires a personal API key. Register at
+\url{https://veriportali.tuik.gov.tr/}, verify your phone number, and
+generate an API key under 'User Information'. Store it in the
+\code{TUIK_API_KEY} environment variable (for example via
+\code{Sys.setenv(TUIK_API_KEY = "<your key>")} or \code{~/.Renviron}).
+The package exchanges the key for short-lived Bearer tokens automatically.
+}
+
+
 \examples{
 \dontrun{
 # Download all observations from a dataflow

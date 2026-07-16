@@ -18,7 +18,7 @@ The package combines web scraping (statistical data) and JSON APIs (geographic d
    - `statistical_themes()`: Scrapes main portal page for available theme list
    - `statistical_tables(theme)`: Returns theme tables with `node_type`, `dataflow_id`, and `table_url`
    - `statistical_databases(theme)`: Legacy database URLs
-   - `statistical_data(dataflow_id, key = "ALL")`: Downloads SDMX data, drops invariant dimensions, and adds `*_label` columns when labels are available
+   - `statistical_data(dataflow_id, key = "ALL")`: Downloads SDMX data, drops invariant dimensions, and adds `*_label` columns when labels are available. Requires a `TUIK_API_KEY` environment variable (see SDMX Authentication below)
    - `statistical_resources(theme)`: Returns all portal resources with `resource_type` and `resource_url`
 
 2. **Geographic Data** (JSON API-based):
@@ -151,6 +151,15 @@ The `geo_data()` function supports:
 - Default: English labels (`lang = "en"`)
 - Turkish labels: `lang = "tr"`
 English is the default language (set in recent refactoring).
+
+### SDMX Authentication
+
+TUIK requires Bearer-token authentication for the SDMX web service (`nsiws.tuik.gov.tr`):
+- Users register at `veriportali.tuik.gov.tr`, verify a phone number, and generate an API key under 'User Information'
+- The key is read from the `TUIK_API_KEY` environment variable
+- `R/auth.R` exchanges the key at `giris.tuik.gov.tr` (Keycloak, client `nsi-ws-consumer`) for short-lived (~300s) access tokens, cached in `tuik_auth_cache` with a 30s expiry margin
+- The Python MCP servers implement the same flow (also via `TUIK_API_KEY`)
+- Network tests hitting SDMX endpoints skip unless both `RUN_NETWORK_TESTS=true` and `TUIK_API_KEY` are set
 
 ### SDMX Dataflow Key Syntax
 
