@@ -74,12 +74,18 @@ pip install .            # or: pip install -e ".[dev]" for development
 # stdio (default — what MCP clients spawn)
 tuik-mcp
 
-# or with the FastMCP CLI
-fastmcp run src/tuik_mcp/server.py:mcp
+# or with the FastMCP CLI, using module mode (requires `pip install .` first)
+fastmcp run -m tuik_mcp.server
 
 # HTTP transport
-fastmcp run src/tuik_mcp/server.py:mcp --transport http --port 8000
+fastmcp run -m tuik_mcp.server --transport http --port 8000
 ```
+
+> Running `fastmcp run src/tuik_mcp/server.py:mcp` (pointing at the file
+> path directly) fails with `attempted relative import with no known parent
+> package` — the file uses package-relative imports (`from . import geo, ...`)
+> that only resolve when `tuik_mcp` is loaded as an installed package.
+> Use `-m tuik_mcp.server` or the `tuik-mcp` entry point instead.
 
 ### Claude Desktop / Claude Code configuration
 
