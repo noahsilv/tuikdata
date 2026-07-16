@@ -1,4 +1,4 @@
 # Dependencies for the repo-root server.py entrypoint (Prefect Horizon etc.).
 # Mirrors mcp-server/pyproject.toml.
-fastmcp>=2.0
+fastmcp==3.4.3
 httpx>=0.27
