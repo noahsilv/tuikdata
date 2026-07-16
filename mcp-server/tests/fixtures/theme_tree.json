@@ -1,0 +1,58 @@
+{
+  "isError": false,
+  "data": [
+    {
+      "id": 110,
+      "name": "Population and Demography",
+      "children": [
+        {
+          "id": 1101,
+          "name": "Population Statistics",
+          "children": [
+            {
+              "id": 11011,
+              "name": "Population by provinces",
+              "icon": "dataflow",
+              "url": "https://databrowser2.tuik.gov.tr/#/en/dataflow/TR,DF_ADNKS_T26,1.0"
+            },
+            {
+              "id": 11012,
+              "name": "Population summary (xls)",
+              "icon": "istab",
+              "url": "/media/istab/pop_summary.xls"
+            },
+            {
+              "id": 11013,
+              "name": "Population press release",
+              "icon": "press",
+              "url": "/en/bulletin/pop-2023"
+            }
+          ]
+        },
+        {
+          "id": 1102,
+          "name": "Demography Databases",
+          "children": [
+            {
+              "id": 11021,
+              "name": "Address based census database",
+              "icon": "database",
+              "url": "https://biruni.tuik.gov.tr/medas/?kn=95&locale=en"
+            },
+            {
+              "id": 11022,
+              "name": "Annual demography report",
+              "icon": "report",
+              "url": "/media/reports/demography_2023.pdf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 120,
+      "name": "Justice and Elections",
+      "children": []
+    }
+  ]
+}

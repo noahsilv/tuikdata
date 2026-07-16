@@ -1,0 +1,34 @@
+{
+  "type": ["FeatureCollection"],
+  "name": "nuts2",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "duzeyKodu": "TR1",
+        "bolgeKodu": "TR1",
+        "nutsKodu": "TR1",
+        "ad": " İstanbul ",
+        "name": "drop-me"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[28.0, 41.0], [29.0, 41.0], [29.0, 41.5], [28.0, 41.0]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "duzeyKodu": "TR5",
+        "bolgeKodu": "TR5",
+        "nutsKodu": "TR5",
+        "ad": "Batı Anadolu",
+        "name": "drop-me"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[32.0, 39.0], [33.0, 39.0], [33.0, 40.0], [32.0, 39.0]]]]
+      }
+    }
+  ]
+}

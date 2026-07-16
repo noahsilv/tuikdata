@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<message:GenericData xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+                     xmlns:generic="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic">
+  <message:Header>
+    <message:ID>IDREF2</message:ID>
+    <message:Test>false</message:Test>
+    <message:Prepared>2024-01-01T00:00:00</message:Prepared>
+    <message:Sender id="TUIK"/>
+  </message:Header>
+  <message:DataSet>
+    <generic:Series>
+      <generic:SeriesKey>
+        <generic:Value id="GOSTERGE" value="POP"/>
+        <generic:Value id="IL" value="TR100"/>
+        <generic:Value id="CINSIYET" value="1"/>
+      </generic:SeriesKey>
+      <generic:Obs>
+        <generic:ObsDimension value="2022"/>
+        <generic:ObsValue value="7900000"/>
+      </generic:Obs>
+      <generic:Obs>
+        <generic:ObsDimension value="2023"/>
+        <generic:ObsValue value="7950000"/>
+      </generic:Obs>
+    </generic:Series>
+    <generic:Series>
+      <generic:SeriesKey>
+        <generic:Value id="GOSTERGE" value="POP"/>
+        <generic:Value id="IL" value="TR510"/>
+        <generic:Value id="CINSIYET" value="2"/>
+      </generic:SeriesKey>
+      <generic:Obs>
+        <generic:ObsDimension value="2022"/>
+        <generic:ObsValue value="2900000.5"/>
+      </generic:Obs>
+    </generic:Series>
+  </message:DataSet>
+</message:GenericData>

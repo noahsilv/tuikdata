@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+                   xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+                   xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common"
+                   xmlns:xml="http://www.w3.org/XML/1998/namespace">
+  <message:Header>
+    <message:ID>IDREF1</message:ID>
+    <message:Test>false</message:Test>
+    <message:Prepared>2024-01-01T00:00:00</message:Prepared>
+    <message:Sender id="TUIK"/>
+  </message:Header>
+  <message:Structures>
+    <structure:Dataflows>
+      <structure:Dataflow id="DF_ADNKS_T26" agencyID="TR" version="1.0" isFinal="true">
+        <common:Name xml:lang="tr">İl ve cinsiyete göre nüfus</common:Name>
+        <common:Name xml:lang="en">Population by province and sex</common:Name>
+        <structure:Structure>
+          <Ref id="ADNKS_T26" agencyID="TR" version="1.0" package="datastructure" class="DataStructure"/>
+        </structure:Structure>
+      </structure:Dataflow>
+    </structure:Dataflows>
+    <structure:Codelists>
+      <structure:Codelist id="CL_IL" agencyID="TR" version="1.0">
+        <common:Name xml:lang="tr">İl kod listesi</common:Name>
+        <common:Name xml:lang="en">Province code list</common:Name>
+        <structure:Code id="TR100">
+          <common:Name xml:lang="tr">İstanbul</common:Name>
+          <common:Name xml:lang="en">Istanbul</common:Name>
+        </structure:Code>
+        <structure:Code id="TR510">
+          <common:Name xml:lang="tr">Ankara</common:Name>
+          <common:Name xml:lang="en">Ankara</common:Name>
+        </structure:Code>
+      </structure:Codelist>
+      <structure:Codelist id="CL_CINSIYET" agencyID="TR" version="1.0">
+        <common:Name xml:lang="tr">Cinsiyet</common:Name>
+        <common:Name xml:lang="en">Sex</common:Name>
+        <structure:Code id="1">
+          <common:Name xml:lang="tr">Erkek</common:Name>
+          <common:Name xml:lang="en">Male</common:Name>
+        </structure:Code>
+        <structure:Code id="2">
+          <common:Name xml:lang="tr">Kadın</common:Name>
+          <common:Name xml:lang="en">Female</common:Name>
+        </structure:Code>
+      </structure:Codelist>
+      <structure:Codelist id="CL_GOSTERGE" agencyID="TR" version="1.0">
+        <common:Name xml:lang="en">Indicator</common:Name>
+        <structure:Code id="POP">
+          <common:Name xml:lang="tr">Nüfus</common:Name>
+          <common:Name xml:lang="en">Population</common:Name>
+        </structure:Code>
+      </structure:Codelist>
+    </structure:Codelists>
+    <structure:DataStructures>
+      <structure:DataStructure id="ADNKS_T26" agencyID="TR" version="1.0">
+        <common:Name xml:lang="en">Population DSD</common:Name>
+        <structure:DataStructureComponents>
+          <structure:DimensionList id="DimensionDescriptor">
+            <structure:Dimension id="GOSTERGE" position="1">
+              <structure:ConceptIdentity>
+                <Ref id="GOSTERGE" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+              <structure:LocalRepresentation>
+                <structure:Enumeration>
+                  <Ref id="CL_GOSTERGE" agencyID="TR" version="1.0" package="codelist" class="Codelist"/>
+                </structure:Enumeration>
+              </structure:LocalRepresentation>
+            </structure:Dimension>
+            <structure:Dimension id="IL" position="2">
+              <structure:ConceptIdentity>
+                <Ref id="IL" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+              <structure:LocalRepresentation>
+                <structure:Enumeration>
+                  <Ref id="CL_IL" agencyID="TR" version="1.0" package="codelist" class="Codelist"/>
+                </structure:Enumeration>
+              </structure:LocalRepresentation>
+            </structure:Dimension>
+            <structure:Dimension id="CINSIYET" position="3">
+              <structure:ConceptIdentity>
+                <Ref id="CINSIYET" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+              <structure:LocalRepresentation>
+                <structure:Enumeration>
+                  <Ref id="CL_CINSIYET" agencyID="TR" version="1.0" package="codelist" class="Codelist"/>
+                </structure:Enumeration>
+              </structure:LocalRepresentation>
+            </structure:Dimension>
+            <structure:TimeDimension id="TIME_PERIOD" position="4">
+              <structure:ConceptIdentity>
+                <Ref id="TIME_PERIOD" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+            </structure:TimeDimension>
+          </structure:DimensionList>
+          <structure:AttributeList id="AttributeDescriptor">
+            <structure:Attribute id="UNIT_MULT" assignmentStatus="Conditional">
+              <structure:ConceptIdentity>
+                <Ref id="UNIT_MULT" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+            </structure:Attribute>
+          </structure:AttributeList>
+          <structure:MeasureList id="MeasureDescriptor">
+            <structure:PrimaryMeasure id="OBS_VALUE">
+              <structure:ConceptIdentity>
+                <Ref id="OBS_VALUE" agencyID="TR" maintainableParentID="CS_ADNKS"/>
+              </structure:ConceptIdentity>
+            </structure:PrimaryMeasure>
+          </structure:MeasureList>
+        </structure:DataStructureComponents>
+      </structure:DataStructure>
+    </structure:DataStructures>
+  </message:Structures>
+</message:Structure>

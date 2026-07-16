@@ -1,0 +1,27 @@
+{
+  "menu": [
+    {
+      "menuAdi": "Nüfus",
+      "subMenu": [
+        {
+          "gostergeAdi": "Toplam nüfus",
+          "gostergeAdiEn": "Total population",
+          "gostergeNo": "SNM-GK160951-O33303",
+          "duzeyler": [2, 3, 4],
+          "period": "yillik",
+          "kaynak": "ADNKS",
+          "kayitSayisi": 15
+        },
+        {
+          "gostergeAdi": "Aylık konut satışı",
+          "gostergeAdiEn": "Monthly house sales",
+          "gostergeNo": "SNM-KONUT-01",
+          "duzeyler": [3],
+          "period": "aylik",
+          "kaynak": "KONUT",
+          "kayitSayisi": 24
+        }
+      ]
+    }
+  ]
+}

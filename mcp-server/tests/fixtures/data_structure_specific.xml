@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<message:StructureSpecificData xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+                               xmlns:ss="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/structurespecific">
+  <message:Header>
+    <message:ID>IDREF3</message:ID>
+    <message:Test>false</message:Test>
+    <message:Prepared>2024-01-01T00:00:00</message:Prepared>
+    <message:Sender id="TUIK"/>
+  </message:Header>
+  <message:DataSet ss:dataScope="DataStructure" ss:structureRef="ADNKS_T26">
+    <Series GOSTERGE="POP" IL="TR100" CINSIYET="1">
+      <Obs TIME_PERIOD="2022" OBS_VALUE="7900000"/>
+      <Obs TIME_PERIOD="2023" OBS_VALUE="7950000"/>
+    </Series>
+    <Series GOSTERGE="POP" IL="TR510" CINSIYET="2">
+      <Obs TIME_PERIOD="2022" OBS_VALUE="2900000.5"/>
+    </Series>
+  </message:DataSet>
+</message:StructureSpecificData>

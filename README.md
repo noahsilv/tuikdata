@@ -290,6 +290,14 @@ settlements <- geo_map(level = 9)  # settlement points
 `dplyr::left_join()` on the `code` column when you want to combine
 boundaries with values returned by `geo_data()`.
 
+## MCP Server
+
+The repository also ships a [FastMCP](https://gofastmcp.com) server
+(`mcp-server/`) that exposes the same TUIK data surfaces — portal discovery,
+SDMX downloads, and geographic data — as Model Context Protocol tools for
+Claude Desktop, Claude Code, and other MCP clients. See
+[mcp-server/README.md](mcp-server/README.md) for installation and usage.
+
 ## Learn More
 
 - **[Getting
